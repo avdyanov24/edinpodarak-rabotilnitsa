@@ -24,7 +24,18 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@edinpodarak.com';
 
 async function accessToken() {
   if (process.env.SUPABASE_ACCESS_TOKEN) return process.env.SUPABASE_ACCESS_TOKEN;
-  // where the CLI keeps it when the OS keyring is unavailable
+
+  // `supabase login` puts the token in the macOS keychain when it can, and in
+  // a file when it cannot. Read whichever exists, so logging in is the only
+  // thing anyone has to do by hand.
+  try {
+    const { execFileSync } = await import('node:child_process');
+    const out = execFileSync('security', ['find-generic-password', '-s', 'Supabase CLI', '-w'], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    if (out) return out;
+  } catch {}
+
   for (const p of [join(homedir(), '.supabase/access-token'), join(homedir(), '.config/supabase/access-token')]) {
     try { return (await readFile(p, 'utf8')).trim(); } catch {}
   }
