@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { db, DbError } from '../../lib/db';
 import { confirmationEmail, noticeEmail, deliver, ownerAddress } from '../../lib/email';
+import { bookingsPersist } from '../../lib/env';
 
 export const prerender = false;
 
@@ -22,6 +23,11 @@ const isPhone = (v: string) => /^(\+359|0)[0-9]{8,9}$/.test(v.replace(/[\s()-]/g
 
 export const POST: APIRoute = async ({ request, clientAddress, url }) => {
   if (tooMany(clientAddress ?? 'unknown')) return json({ error: 'rate_limited' }, 429);
+
+  // Deployed without a database behind it. The form already offers email
+  // instead; this covers anything posting here directly. Better a clear
+  // refusal than a seat that disappears with the instance that took it.
+  if (!bookingsPersist()) return json({ error: 'no_storage' }, 503);
 
   let body: Record<string, unknown>;
   try {

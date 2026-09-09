@@ -25,6 +25,11 @@ function secret(): string {
   return (globalThis as any).__rabDevSecret ??= randomBytes(32).toString('hex');
 }
 
+/** Can this deploy issue sessions at all? False when the secret is missing. */
+export function isConfigured(): boolean {
+  try { secret(); return true; } catch { return false; }
+}
+
 const sign = (payload: string) => createHmac('sha256', secret()).update(payload).digest('base64url');
 
 function serialise(email: string): string {

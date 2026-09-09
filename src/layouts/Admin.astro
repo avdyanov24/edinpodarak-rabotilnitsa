@@ -2,10 +2,12 @@
 import '@fontsource-variable/manrope/wght.css';
 import '@fontsource/playfair-display/cyrillic-400.css';
 import { db } from '../lib/db';
+import { bookingsPersist } from '../lib/env';
 
 interface Props { title: string; email?: string }
 const { title, email } = Astro.props;
 const here = Astro.url.pathname;
+const persists = bookingsPersist();
 
 const nav = [
   { href: '/admin', label: 'Работилници' },
@@ -42,10 +44,17 @@ const nav = [
           <a class="top__out" href="/admin/izhod">Излез</a>
         </div>
       </div>
-      {db.kind === 'local' && (
+      {db.kind === 'local' && persists && (
         <p class="banner">
           Работиш върху локалния файл <code>.data/db.json</code>, не върху Supabase.
           Данните са само на този компютър.
+        </p>
+      )}
+      {!persists && (
+        <p class="banner banner--bad">
+          Няма свързана база данни. Каквото запишеш тук, изчезва при следващото
+          пускане на сървъра, а записването на сайта е спряно — хората виждат
+          покана да пишат на имейл. Настрой Supabase (виж <code>SUPABASE.md</code>).
         </p>
       )}
     </header>
@@ -90,6 +99,7 @@ const nav = [
         background: #FBF3DE; border-top: 1px solid #EBD9AE; color: #6B551F; font-size: 0.82rem;
       }
       .banner code { background: rgb(0 0 0 / 0.05); padding: 0.1em 0.35em; border-radius: 3px; }
+      .banner--bad { background: #FBE9E4; color: #7A2E12; }
 
       .page { max-width: 76rem; margin-inline: auto; padding: 1.75rem 1.25rem 5rem; }
 

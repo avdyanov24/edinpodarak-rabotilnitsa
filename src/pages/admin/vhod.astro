@@ -2,13 +2,21 @@
 import Admin from '../../layouts/Admin.astro';
 import { signIn, setSession, readSession } from '../../lib/auth';
 import { db } from '../../lib/db';
+import { isConfigured } from '../../lib/auth';
 
 export const prerender = false;
 
-if (readSession(Astro.cookies)) return Astro.redirect('/admin', 302);
+/**
+ * Without a signing secret there is no session to issue, and every call into
+ * auth would throw. Say so in Bulgarian instead of returning a 500 nobody
+ * can act on.
+ */
+const configured = isConfigured();
+
+if (configured && readSession(Astro.cookies)) return Astro.redirect('/admin', 302);
 
 let error = '';
-if (Astro.request.method === 'POST') {
+if (configured && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const email = String(form.get('email') ?? '');
   const password = String(form.get('password') ?? '');
@@ -26,6 +34,14 @@ if (Astro.request.method === 'POST') {
     <p class="sub">Оттук добавяш работилници и виждаш кой се е записал.</p>
 
     {error && <p class="note note--bad">{error}</p>}
+
+    {!configured && (
+      <p class="note note--bad">
+        Панелът не е настроен: липсва <code>ADMIN_SESSION_SECRET</code> в
+        средата на сървъра. Добави я в настройките на хостинга и пусни
+        публикуването наново.
+      </p>
+    )}
 
     <form method="POST" class="card login__card">
       <div class="field">

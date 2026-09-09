@@ -5,3 +5,4 @@ dist/
 .data/
 shots/
 .DS_Store
+.vercel/

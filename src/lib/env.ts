@@ -9,3 +9,13 @@ export function env(key: string): string | undefined {
 
 export const hasSupabase = () =>
   Boolean(env('SUPABASE_URL') && env('SUPABASE_SERVICE_ROLE_KEY'));
+
+/**
+ * Whether a booking taken right now would still be there tomorrow.
+ *
+ * Supabase always is. The file-backed stand-in only is when there is a real
+ * disk under it — on Vercel there is not: the filesystem is read-only apart
+ * from /tmp, which belongs to one instance and is thrown away. Rather than
+ * lose someone's seat, the form falls back to email until Supabase is set up.
+ */
+export const bookingsPersist = () => hasSupabase() || !env('VERCEL');

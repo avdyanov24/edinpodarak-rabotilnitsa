@@ -3,13 +3,17 @@ import { u } from '../lib/url';
 import type { WorkshopEvent } from '../data/events';
 import { fmtWhen, fmtPrice, fmtDuration, availability } from '../lib/format';
 import { brand } from '../data/site';
+import { bookingsPersist } from '../lib/env';
 
 interface Props { events: WorkshopEvent[] }
 const { events } = Astro.props;
 
-// The static export has no /api/register behind it, so the form composes an
-// email instead of pretending to book a seat. See tools/build-pages.mjs.
-const staticMode = Boolean(import.meta.env.PUBLIC_PAGES);
+/**
+ * Booking online needs somewhere durable to write it. Where there is nowhere
+ * — the static export, or Vercel before Supabase exists — the form composes
+ * an email to Джейля instead of swallowing someone's seat.
+ */
+const online = !import.meta.env.PUBLIC_PAGES && bookingsPersist();
 
 // Only what the dialog needs, so we don't ship the full descriptions twice.
 const payload = events.map((e) => ({
@@ -104,7 +108,7 @@ const payload = events.map((e) => ({
         <div class="su__actions">
           <button class="btn su__submit" type="submit" data-su-submit>Запиши ме</button>
           <p class="su__small">Онлайн не се плаща нищо.</p>
-          {staticMode && (
+          {!online && (
             <p class="su__small su__small--note">
               В тази версия заявката тръгва по имейл — отговарям до няколко часа.
             </p>
@@ -118,7 +122,7 @@ const payload = events.map((e) => ({
 </dialog>
 
 <script is:inline type="application/json" data-su-data set:html={JSON.stringify(payload)}></script>
-<script is:inline type="application/json" data-su-brand set:html={JSON.stringify({ phone: brand.phone, phoneDisplay: brand.phoneDisplay, instagram: brand.instagram, email: brand.email })}></script>
+<script is:inline type="application/json" data-su-brand set:html={JSON.stringify({ phone: brand.phone, phoneDisplay: brand.phoneDisplay, instagram: brand.instagram, email: brand.email, online })}></script>
 
 <style>
   .su {
@@ -246,7 +250,7 @@ const payload = events.map((e) => ({
     JSON.parse(document.querySelector(sel)?.textContent ?? 'null');
 
   const data: EventLite[] = read('[data-su-data]') ?? [];
-  const contact = read<{ phone: string; phoneDisplay: string; instagram: string; email: string }>('[data-su-brand]');
+  const contact = read<{ phone: string; phoneDisplay: string; instagram: string; email: string; online: boolean }>('[data-su-brand]');
 
   const dialog = document.querySelector('[data-signup-dialog]') as HTMLDialogElement | null;
   const form = document.querySelector('[data-signup-form]') as HTMLFormElement | null;
@@ -369,9 +373,9 @@ const payload = events.map((e) => ({
     const original = submit?.textContent ?? '';
     if (submit) submit.textContent = 'Записвам…';
 
-    // Static export: no endpoint to post to. Hand the visitor a pre-filled
-    // email rather than a spinner that never resolves.
-    if (import.meta.env.PUBLIC_PAGES) {
+    // Nowhere durable to write: hand the visitor a pre-filled email rather
+    // than a spinner that never resolves, or a seat that quietly evaporates.
+    if (!contact.online) {
       const lines = [
         `Работилница: ${current.title}`,
         `Дата: ${current.when}`,
