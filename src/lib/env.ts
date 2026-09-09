@@ -7,6 +7,10 @@ export function env(key: string): string | undefined {
   return viteEnv?.[key] || process.env[key] || undefined;
 }
 
+/** Running on a host, rather than on someone's laptop. */
+export const isDeployed = () =>
+  Boolean(env('VERCEL') || env('NODE_ENV') === 'production');
+
 export const hasSupabase = () =>
   Boolean(env('SUPABASE_URL') && env('SUPABASE_SERVICE_ROLE_KEY'));
 
@@ -18,4 +22,4 @@ export const hasSupabase = () =>
  * from /tmp, which belongs to one instance and is thrown away. Rather than
  * lose someone's seat, the form falls back to email until Supabase is set up.
  */
-export const bookingsPersist = () => hasSupabase() || !env('VERCEL');
+export const bookingsPersist = () => hasSupabase() || !isDeployed();

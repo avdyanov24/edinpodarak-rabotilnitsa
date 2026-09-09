@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual, randomBytes } from 'node:crypto';
 import type { AstroCookies } from 'astro';
 import { createClient } from '@supabase/supabase-js';
-import { env, hasSupabase } from './env';
+import { env, hasSupabase, isDeployed } from './env';
 
 /**
  * One session cookie either way.
@@ -18,16 +18,38 @@ const MAX_AGE = 60 * 60 * 12; // 12 hours
 function secret(): string {
   const s = env('ADMIN_SESSION_SECRET');
   if (s) return s;
-  if (env('NODE_ENV') === 'production') {
-    throw new Error('ADMIN_SESSION_SECRET must be set in production');
+  if (isDeployed()) {
+    throw new Error('ADMIN_SESSION_SECRET must be set on a deployed site');
   }
   // dev only: stable for the life of the process
   return (globalThis as any).__rabDevSecret ??= randomBytes(32).toString('hex');
 }
 
-/** Can this deploy issue sessions at all? False when the secret is missing. */
+/**
+ * The demo pair, for running the panel on a laptop before Supabase exists.
+ * It is published in this repository, so it must never be accepted by a
+ * deployed site — see credentials() below.
+ */
+const DEV_ONLY = { email: 'admin@example.com', password: 'rabotilnitsa' };
+
+/**
+ * The email/password this deploy accepts, or null when there is none.
+ *
+ * A deployed site with no ADMIN_EMAIL / ADMIN_PASSWORD set refuses everyone
+ * rather than falling back to DEV_ONLY: those two strings are in the repo,
+ * so falling back would leave the panel open to anyone who has read it.
+ */
+function credentials(): { email: string; password: string } | null {
+  const email = env('ADMIN_EMAIL');
+  const password = env('ADMIN_PASSWORD');
+  if (email && password) return { email, password };
+  return isDeployed() ? null : DEV_ONLY;
+}
+
+/** Can this deploy sign anyone in? False when the secret or the login is missing. */
 export function isConfigured(): boolean {
-  try { secret(); return true; } catch { return false; }
+  try { secret(); } catch { return false; }
+  return hasSupabase() || credentials() !== null;
 }
 
 const sign = (payload: string) => createHmac('sha256', secret()).update(payload).digest('base64url');
@@ -67,12 +89,12 @@ export async function signIn(email: string, password: string): Promise<boolean> 
     return !error;
   }
 
-  const expectedEmail = env('ADMIN_EMAIL') ?? 'admin@example.com';
-  const expectedPass = env('ADMIN_PASSWORD') ?? 'rabotilnitsa';
+  const expected = credentials();
+  if (!expected) return false;
   // constant-time-ish: compare both, never short-circuit on the email
-  const emailOk = email.trim().toLowerCase() === expectedEmail.toLowerCase();
+  const emailOk = email.trim().toLowerCase() === expected.email.toLowerCase();
   const passBuf = Buffer.from(password.padEnd(64).slice(0, 64));
-  const expBuf = Buffer.from(expectedPass.padEnd(64).slice(0, 64));
+  const expBuf = Buffer.from(expected.password.padEnd(64).slice(0, 64));
   return emailOk && timingSafeEqual(passBuf, expBuf);
 }
 

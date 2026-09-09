@@ -37,9 +37,10 @@ if (configured && Astro.request.method === 'POST') {
 
     {!configured && (
       <p class="note note--bad">
-        Панелът не е настроен: липсва <code>ADMIN_SESSION_SECRET</code> в
-        средата на сървъра. Добави я в настройките на хостинга и пусни
-        публикуването наново.
+        Панелът не е настроен: липсват <code>ADMIN_SESSION_SECRET</code>,
+        <code>ADMIN_EMAIL</code> и <code>ADMIN_PASSWORD</code> в средата на
+        сървъра. Добави ги в настройките на хостинга и пусни публикуването
+        наново. Дотогава никой не може да влезе.
       </p>
     )}
 
