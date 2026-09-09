@@ -23,6 +23,7 @@ const payload = events.map((e) => ({
   when: fmtWhen(e.starts_at),
   venue: `${e.venue_name}, ${e.venue_address}`,
   price: fmtPrice(e.price_cents),
+  priceCents: e.price_cents,
   duration: fmtDuration(e.duration_minutes),
   seats: availability(e.capacity, e.seats_taken, e.registrations_open),
   minAge: e.min_age,
@@ -56,7 +57,7 @@ const payload = events.map((e) => ({
         </p>
 
         <div class="su__fields">
-          <label class="fld">
+          <label class="fld fld--full">
             <span class="fld__label">Име и фамилия <b aria-hidden="true">*</b></span>
             <input class="fld__input" type="text" name="full_name" required autocomplete="name" placeholder="Мария Петрова" />
             <span class="fld__err" data-err="full_name"></span>
@@ -75,7 +76,7 @@ const payload = events.map((e) => ({
             <span class="fld__err" data-err="email"></span>
           </label>
 
-          <label class="fld fld--narrow">
+          <label class="fld">
             <span class="fld__label">Колко места</span>
             <select class="fld__input" name="people_count" data-su-people>
               <option value="1">1 място</option>
@@ -84,6 +85,8 @@ const payload = events.map((e) => ({
               <option value="4">4 места</option>
             </select>
           </label>
+
+          <p class="su__sum" data-su-sum></p>
 
           <label class="fld fld--full">
             <span class="fld__label">Бележка <span class="fld__opt">по желание</span></span>
@@ -125,22 +128,37 @@ const payload = events.map((e) => ({
 <script is:inline type="application/json" data-su-brand set:html={JSON.stringify({ phone: brand.phone, phoneDisplay: brand.phoneDisplay, instagram: brand.instagram, email: brand.email, online })}></script>
 
 <style>
+  /* The dialog is a fixed-height box with one scrolling region inside it.
+     It used to let the form grow past 92vh and clip — which put "Запиши ме"
+     off-screen with nothing to scroll, so on a 900px-tall display the form
+     could not be submitted at all. min-height: 0 on every level is what lets
+     the middle shrink instead of the whole thing overflowing. */
   .su {
     border: 0;
     padding: 0;
     width: min(96vw, 62rem);
-    max-height: 92vh;
+    max-height: min(92vh, 44rem);
     background: var(--paper);
     border-radius: 8px;
     overflow: hidden;
     color: var(--ink);
   }
+  /* Only when open. A `display` on the dialog itself overrides the browser's
+     `dialog:not([open]) { display: none }`, which leaves the closed dialog
+     sitting on the page. */
+  .su[open] { display: flex; }
   .su::backdrop { background: rgb(9 20 14 / 0.86); backdrop-filter: blur(8px); }
   .su[open] { animation: suIn 0.5s var(--ease-out); }
+
   @keyframes suIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
 
-  .su__form { margin: 0; }
-  .su__grid { display: grid; grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr); max-height: 92vh; }
+  .su__form { margin: 0; display: flex; flex: 1; min-width: 0; min-height: 0; }
+  .su__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+    flex: 1;
+    min-height: 0;
+  }
 
   .su__close {
     position: absolute;
@@ -157,7 +175,15 @@ const payload = events.map((e) => ({
   .su__close:hover { background: var(--paper-warm); }
 
   /* --- left: which workshop you're booking --- */
-  .su__aside { position: relative; background: var(--forest-dp); color: var(--cream); display: grid; align-content: start; }
+  .su__aside {
+    position: relative;
+    background: var(--forest-dp);
+    color: var(--cream);
+    display: grid;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+  }
   .su__cover { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; opacity: 0.85; }
   .su__facts { padding: clamp(1.2rem, 2.4vw, 1.9rem); display: grid; gap: 1rem; }
   .su__event { font-size: var(--step-2); }
@@ -179,14 +205,23 @@ const payload = events.map((e) => ({
   .su__seats.is-scarce { border-color: var(--clay); background: color-mix(in oklab, var(--clay) 30%, transparent); }
 
   /* --- right: the form --- */
-  .su__main { padding: clamp(1.5rem, 3vw, 2.6rem); overflow-y: auto; }
+  .su__main {
+    --pad: clamp(1.5rem, 3vw, 2.6rem);
+    padding: var(--pad);
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
   .su__title { font-size: var(--step-3); margin-bottom: 0.5rem; }
   .su__lede { color: var(--muted); font-size: var(--step--1); margin-bottom: 1.8rem; }
 
-  .su__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .fld { display: grid; gap: 0.35rem; }
-  .fld--full, .su__fields > .fld:nth-child(1), .su__fields > .fld:nth-child(3) { grid-column: 1 / -1; }
-  .fld--narrow { grid-column: auto; }
+  /* Two even columns. Which fields span both is stated on the element, not
+     inferred from its position — reordering a field used to silently change
+     the layout, which is how phone and email ended up different widths. */
+  .su__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.1rem; align-items: start; }
+  .fld { display: grid; gap: 0.35rem; align-content: start; }
+  .fld--full { grid-column: 1 / -1; }
   .fld__label { font-size: 0.78rem; letter-spacing: 0.01em; font-weight: 700; }
   .fld__label b { color: var(--clay-ink); }
   .fld__opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
@@ -212,12 +247,44 @@ const payload = events.map((e) => ({
   .fld__err:empty { display: none; }
   .fld.has-error .fld__input { border-color: var(--clay); }
 
+  .su__sum {
+    margin: 0;
+    align-self: end;
+    padding-bottom: 0.75em;
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+  .su__sum b { color: var(--ink); font-weight: 700; }
+  .su__sum:empty { display: none; }
+
   .chk { display: flex; gap: 0.7rem; align-items: start; font-size: var(--step--1); color: var(--muted); }
   .chk input { margin-top: 0.28em; width: 1.05rem; height: 1.05rem; accent-color: var(--moss); flex: none; }
 
   .su__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
-  .su__actions { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: 1.6rem; }
+  /* Sticks to the bottom of the scrolling form, so the thing the visitor
+     came to press is never below the fold. */
+  .su__actions {
+    position: sticky;
+    bottom: calc(-1 * var(--pad));
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    margin: 1.6rem calc(-1 * var(--pad)) calc(-1 * var(--pad));
+    padding: 1rem var(--pad) var(--pad);
+    background: var(--paper);
+    border-top: 1px solid var(--rule-soft);
+  }
+  .su__actions::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 100%;
+    height: 1.5rem;
+    background: linear-gradient(to top, var(--paper), color-mix(in oklab, var(--paper) 0%, transparent));
+    pointer-events: none;
+  }
   .su__small { margin: 0; font-size: 0.75rem; color: var(--muted); }
   .su__small--note { flex-basis: 100%; color: var(--clay-ink); }
   .su__submit[aria-busy='true'] { opacity: 0.7; pointer-events: none; }
@@ -231,10 +298,26 @@ const payload = events.map((e) => ({
   .su__msg strong { display: block; font-family: var(--display); font-size: var(--step-1); margin-bottom: 0.25rem; }
 
   @media (max-width: 780px) {
-    .su__grid { grid-template-columns: 1fr; overflow-y: auto; }
-    .su__cover { aspect-ratio: 16 / 9; }
+    .su { max-height: 92vh; }
+    /* One column that scrolls as a whole; the aside scrolls away with it. */
+    .su__grid { grid-template-columns: 1fr; grid-auto-rows: min-content; overflow-y: auto; }
+    .su__aside { overflow: visible; }
+    .su__main { overflow: visible; }
+    /* The photo and the facts used to take about 60% of a phone screen, so
+       the form began below the fold on open. Same information, a third of
+       the height: a shallower crop and the labels beside their values. */
+    .su__cover { aspect-ratio: 21 / 9; max-height: 20vh; }
+    .su__facts { padding: 1rem 1.1rem; gap: 0.7rem; }
+    .su__event { font-size: var(--step-1); }
+    .su__facts dl { gap: 0.4rem; }
+    .su__facts dl > div { grid-template-columns: 4.2rem 1fr; gap: 0.7rem; align-items: baseline; }
+    .su__seats { padding: 0.4em 0.8em; }
+
+    .su__title { font-size: var(--step-2); }
+    .su__lede { margin-bottom: 1.1rem; }
+
     .su__fields { grid-template-columns: 1fr; }
-    .fld--narrow { grid-column: 1 / -1; }
+    .su__sum { align-self: start; padding-bottom: 0; margin-top: -0.4rem; }
   }
   @media (prefers-reduced-motion: reduce) { .su[open] { animation: none; } }
 </style>
@@ -243,7 +326,7 @@ const payload = events.map((e) => ({
   interface Seats { left: number; full: boolean; scarce: boolean; label: string }
   interface EventLite {
     id: string; title: string; cover: string; when: string; venue: string;
-    price: string; duration: string; seats: Seats; minAge: number | null;
+    price: string; priceCents: number; duration: string; seats: Seats; minAge: number | null;
   }
 
   const read = <T,>(sel: string): T =>
@@ -303,7 +386,28 @@ const payload = events.map((e) => ({
       });
       people.value = '1';
     }
+    renderSum();
   }
+
+  /**
+   * What it comes to, so nobody has to multiply in their head — the price is
+   * per person, since each person leaves with their own piece. Nothing is
+   * charged online, which the line says out loud.
+   */
+  function renderSum() {
+    const sum = $('[data-su-sum]');
+    const people = $('[data-su-people]') as HTMLSelectElement | null;
+    if (!sum) return;
+    if (!current || isWaitlist) { sum.textContent = ''; return; }
+    const n = Math.max(1, Number(people?.value ?? 1));
+    const total = (current.priceCents * n) / 100;
+    const money = `${total.toLocaleString('bg-BG')} €`;
+    sum.innerHTML = n === 1
+      ? `<b>${money}</b> · плащаш на място`
+      : `${n} × ${current.price} = <b>${money}</b> · плащаш на място`;
+  }
+
+  $('[data-su-people]')?.addEventListener('change', renderSum);
 
   function open(eventId: string, waitlist: boolean, trigger: HTMLElement) {
     const event = data.find((e) => e.id === eventId);
