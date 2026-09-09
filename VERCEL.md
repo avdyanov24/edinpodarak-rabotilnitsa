@@ -16,8 +16,8 @@
 | Име | Стойност | Задължителна |
 |---|---|---|
 | `ADMIN_SESSION_SECRET` | дълъг случаен низ (`openssl rand -base64 32`) | да — без нея панелът не работи |
-| `ADMIN_EMAIL` | твоят имейл | докато няма Supabase |
-| `ADMIN_PASSWORD` | силна парола | докато няма Supabase |
+| `ADMIN_EMAIL` | твоят имейл | да — без нея никой не влиза |
+| `ADMIN_PASSWORD` | силна парола, различна от другите ти | да — без нея никой не влиза |
 | `SITE_URL` | адресът на сайта, напр. `https://rabotilnitsa.edinpodarak.com` | не, но канониклите и sitemap-ът зависят от нея |
 | `SUPABASE_URL` | от проекта в Supabase | за да работи записването |
 | `SUPABASE_SERVICE_ROLE_KEY` | от проекта в Supabase | за да работи записването |
@@ -26,6 +26,10 @@
 
 `SUPABASE_SERVICE_ROLE_KEY` заобикаля всички правила за достъп. Стои само
 във Vercel — никога в кода, никога в променлива с префикс `PUBLIC_`.
+
+Демо двойката от `.env.example` (`admin@example.com` / `rabotilnitsa`) стои в
+този repo и **не важи на хостван сайт** — там панелът е заключен, докато не
+зададеш горните две. Проверява се от `tools/auth-check.mjs`.
 
 ## 3. Докато няма Supabase
 
