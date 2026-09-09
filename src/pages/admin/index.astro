@@ -109,6 +109,9 @@ const statusTag = (e: (typeof events)[number]) =>
     .group { margin-bottom: 1.5rem; overflow: hidden; }
     .group__title { font-size: 1.05rem; padding: 1rem 0.75rem 0.5rem; }
     .ev { font-weight: 600; text-decoration: none; }
+    @media (pointer: coarse) {
+      .ev { display: inline-flex; align-items: center; min-height: 44px; }
+    }
     .ev:hover { color: var(--moss); }
     .ev__meta { display: block; font-size: 0.78rem; color: var(--muted); }
     .ev__meta.is-scarce { color: var(--clay); font-weight: 600; }

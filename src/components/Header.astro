@@ -179,10 +179,13 @@ const nav = [
   .menu {
     position: fixed;
     inset: 0;
+    /* inset:0 on a fixed element is the layout viewport, which on iOS extends
+       behind the browser bars — the button at the bottom ended up under them. */
+    height: 100dvh;
     z-index: 1;
     background: var(--forest-dp);
     color: var(--cream);
-    padding: 6rem var(--gutter) 2.5rem;
+    padding: 6rem var(--gutter) calc(2.5rem + env(safe-area-inset-bottom));
     display: grid;
     align-content: space-between;
     gap: 2rem;
@@ -221,7 +224,7 @@ const nav = [
   }
 
   /* Micro-labels: readable in the hand, not just on a desktop. */
-  @media (max-width: 560px) {
+  @media (max-width: 560px), (pointer: coarse) {
     .hdr__brandText small { font-size: 0.76rem; letter-spacing: 0.13em; }
     .menu__foot .link { display: inline-flex; align-items: center; min-height: 44px; }
     .menu__num { font-size: 0.78rem; letter-spacing: 0.12em; }
@@ -241,11 +244,38 @@ const nav = [
     window.addEventListener('scroll', onScroll, { passive: true });
   }
 
+  /**
+   * Locking the page while the menu is open.
+   *
+   * `body { overflow: hidden }` is ignored by Safari on iOS — the page keeps
+   * scrolling behind the menu, and closing it leaves you somewhere else
+   * entirely. Pinning the body and restoring the offset afterwards is the
+   * only thing that holds on every browser.
+   */
+  let lockedAt = 0;
+  const lockScroll = (on: boolean) => {
+    const body = document.body;
+    if (on) {
+      lockedAt = window.scrollY;
+      body.style.position = 'fixed';
+      body.style.top = `-${lockedAt}px`;
+      body.style.insetInline = '0';
+      body.style.width = '100%';
+    } else if (body.style.position === 'fixed') {
+      body.style.position = '';
+      body.style.top = '';
+      body.style.insetInline = '';
+      body.style.width = '';
+      // instant, or the browser animates back up the page
+      window.scrollTo({ top: lockedAt, behavior: 'instant' as ScrollBehavior });
+    }
+  };
+
   const setOpen = (open: boolean) => {
     header?.classList.toggle('is-open', open);
     toggle?.setAttribute('aria-expanded', String(open));
     if (menu) (menu as HTMLElement).hidden = !open;
-    document.body.style.overflow = open ? 'hidden' : '';
+    lockScroll(open);
   };
 
   toggle?.addEventListener('click', () => {

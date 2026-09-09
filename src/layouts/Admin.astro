@@ -94,6 +94,40 @@ const nav = [
       .top__view:hover, .top__out:hover { color: var(--ink); }
       .top__who { color: var(--muted); }
 
+      /* --- phone ---
+         The bar was one flex row and ran 63px off the side of a 360px
+         screen. Brand and sign-out keep the first line; the sections move to
+         a line of their own that can scroll sideways as more are added. */
+      @media (max-width: 720px) {
+        .top__in { flex-wrap: wrap; gap: 0.7rem 1rem; padding: 0.6rem 1rem; }
+        .top__right { margin-inline-start: auto; gap: 1rem; }
+        .top__who { display: none; }
+        .top__nav {
+          order: 3;
+          width: 100%;
+          margin-inline-end: 0;
+          gap: 1.4rem;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .top__nav::-webkit-scrollbar { display: none; }
+        .top__link { white-space: nowrap; }
+      }
+      /* Everything the panel is driven by, sized for a thumb. */
+      @media (pointer: coarse) {
+        .top__brand, .top__link, .top__view, .top__out {
+          display: inline-flex; align-items: center; min-height: 44px;
+        }
+        .top__link { padding-block: 0; }
+        .btn { min-height: 44px; }
+        input[type='file'] { min-height: 44px; }
+        input[type='checkbox'] { width: 1.25rem; height: 1.25rem; }
+        .check { min-height: 44px; }
+        a[href^='tel:'], a[href^='mailto:'] {
+          display: inline-flex; align-items: center; min-height: 44px;
+        }
+      }
+
       .banner {
         margin: 0; padding: 0.5rem 1.25rem; text-align: center;
         background: #FBF3DE; border-top: 1px solid #EBD9AE; color: #6B551F; font-size: 0.82rem;
@@ -150,6 +184,30 @@ const nav = [
       th { text-align: left; font-size: 0.75rem; color: var(--muted); font-weight: 700; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--line); }
       td { padding: 0.7rem 0.75rem; border-bottom: 1px solid #F0EBDF; vertical-align: top; }
       tr:last-child td { border-bottom: 0; }
+
+      /* --- phone ---
+         A five-column table on a 390px screen pushed the two buttons that
+         matter off the right-hand edge, with nothing to say they were there.
+         Each row becomes a card instead: everything visible, actions last. */
+      @media (max-width: 720px) {
+        table, tbody, tr, td { display: block; width: 100%; }
+        thead { display: none; }
+        tr { padding: 1rem 0.75rem; border-bottom: 1px solid var(--line); }
+        tr:last-child { border-bottom: 0; }
+        td { padding: 0.1rem 0; border-bottom: 0; }
+        /* each cell is a group — workshop, date, seats, status — so give
+           them air rather than one undifferentiated stack of lines */
+        td + td { padding-top: 0.55rem; }
+        td:empty { display: none; }
+        td.right {
+          text-align: left;
+          white-space: normal;
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.9rem;
+        }
+        td.right .btn { margin-left: 0; flex: 1; justify-content: center; }
+      }
     </style>
   </body>
 </html>

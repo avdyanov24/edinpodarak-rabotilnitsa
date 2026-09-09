@@ -212,13 +212,13 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
   }
 
   /* Micro-labels: readable in the hand, not just on a desktop. */
-  @media (max-width: 560px) {
+  @media (max-width: 560px), (pointer: coarse) {
     .card__tag i { font-size: 0.72rem; letter-spacing: 0.12em; }
     .card__meta dt { font-size: 0.78rem; }
   }
 
   /* Thumb-sized targets on phones. */
-  @media (max-width: 560px) {
+  @media (max-width: 560px), (pointer: coarse) {
     .card__more { display: inline-flex; align-items: center; min-height: 44px; }
   }
 </style>

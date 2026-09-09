@@ -274,7 +274,7 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
   }
 
   /* Micro-labels: readable in the hand, not just on a desktop. */
-  @media (max-width: 560px) {
+  @media (max-width: 560px), (pointer: coarse) {
     .gal__hint { font-size: 0.78rem; letter-spacing: 0.01em; }
     .gal__plate, .gal__plateText { font-size: 0.78rem; }
   }
@@ -289,6 +289,13 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
     max-height: 100vh;
     width: 100vw;
     height: 100vh;
+    /* On iOS, 100vh is the height with the browser bars hidden, so the
+       lightbox ran taller than the screen and its controls sat under the
+       toolbar. dvh tracks what is actually visible. */
+    max-width: 100dvw;
+    max-height: 100dvh;
+    width: 100dvw;
+    height: 100dvh;
     background: transparent;
     overflow: hidden;
     color: var(--cream);
@@ -316,6 +323,7 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
   .lb__img {
     max-width: 100%;
     max-height: calc(100vh - 12rem);
+    max-height: calc(100dvh - 12rem);
     object-fit: contain;
     border-radius: 3px;
     background: var(--paper);
@@ -368,7 +376,7 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
     .lb__nav { position: absolute; bottom: 1.25rem; }
     .lb__nav--prev { left: 25%; }
     .lb__nav--next { right: 25%; }
-    .lb__img { max-height: calc(100vh - 14rem); }
+    .lb__img { max-height: calc(100vh - 14rem); max-height: calc(100dvh - 14rem); }
   }
   @media (prefers-reduced-motion: reduce) {
     .lb[open] { animation: none; }

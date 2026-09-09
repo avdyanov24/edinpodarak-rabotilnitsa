@@ -249,12 +249,12 @@ const jsonLd = {
   }
 
   /* Micro-labels: readable in the hand, not just on a desktop. */
-  @media (max-width: 560px) {
+  @media (max-width: 560px), (pointer: coarse) {
     .ev__facts dt { font-size: 0.78rem; letter-spacing: 0.1em; }
   }
 
   /* Thumb-sized targets on phones. */
-  @media (max-width: 560px) {
+  @media (max-width: 560px), (pointer: coarse) {
     .ev__back { display: inline-flex; align-items: center; min-height: 44px; }
   }
 </style>
