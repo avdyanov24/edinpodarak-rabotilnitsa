@@ -71,8 +71,14 @@ let dbPassword = null;
 if (project) {
   console.log(`  reusing ${project.name} (${project.id}) in ${project.region}`);
 } else {
-  const orgs = await api('/organizations');
-  if (!orgs.length) throw new Error('No Supabase organization on this account.');
+  // An account created through the CLI has no organization until something
+  // makes one, and a project has to belong to one.
+  let orgs = await api('/organizations');
+  if (!orgs.length) {
+    console.log('  no organization on this account — creating one');
+    await api('/organizations', { method: 'POST', body: JSON.stringify({ name: 'Alesse Studio' }) });
+    orgs = await api('/organizations');
+  }
   const org = orgs[0];
   dbPassword = randomBytes(24).toString('base64url');
   console.log(`  creating "${NAME}" in ${org.name} · ${REGION}`);
@@ -111,17 +117,33 @@ console.log(`  ${url}`);
 
 // ------------------------------------------------------------- migrations ---
 step('Applying the migrations');
+
+/**
+ * A freshly created project reports ACTIVE_HEALTHY before its SQL endpoint
+ * will accept a connection — the first queries come back "password
+ * authentication failed". Retry rather than make anyone re-run this.
+ */
+async function sql(query, label) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await api(`/projects/${ref}/database/query`, { method: 'POST', body: JSON.stringify({ query }) });
+    } catch (err) {
+      const transient = /authentication failed|wait a moment|502|503|504/.test(String(err.message));
+      if (!transient || attempt >= 20) throw err;
+      process.stdout.write(`  ${label}: database not accepting connections yet (${attempt})\r`);
+      await sleep(10000);
+    }
+  }
+}
+
 const dir = join(root, 'supabase/migrations');
 for (const file of (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort()) {
   const query = await readFile(join(dir, file), 'utf8');
-  await api(`/projects/${ref}/database/query`, { method: 'POST', body: JSON.stringify({ query }) });
-  console.log(`  ${file}`);
+  await sql(query, file);
+  console.log(`  ${file}                                                    `);
 }
 
-const rows = await api(`/projects/${ref}/database/query`, {
-  method: 'POST',
-  body: JSON.stringify({ query: "select count(*)::int as n from public.events" }),
-});
+const rows = await sql('select count(*)::int as n from public.events', 'verify');
 console.log(`  events table reachable — ${JSON.stringify(rows)}`);
 
 // ------------------------------------------------------------------- seed ---
