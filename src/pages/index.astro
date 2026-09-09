@@ -29,7 +29,9 @@ import { root, u } from '../lib/url';
  */
 export const prerender = false;
 if (!import.meta.env.PUBLIC_PAGES) {
-  Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+  // s-maxage caches at the CDN; max-age=0 keeps the visitor's own browser
+  // from holding a stale seat count after they book.
+  Astro.response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600');
 }
 
 const events = await getUpcomingEvents();

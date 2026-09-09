@@ -10,7 +10,6 @@ import type { WorkshopEvent } from '../lib/db/types';
 export type { WorkshopEvent } from '../lib/db/types';
 
 export const seedEvents: WorkshopEvent[] = [
-] = [
   {
     id: '11111111-1111-4111-8111-111111111111',
     gallery: [],
