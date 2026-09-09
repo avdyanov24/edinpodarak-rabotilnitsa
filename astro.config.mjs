@@ -27,6 +27,22 @@ export default defineConfig({
   // with the URL that was linked. File output is served directly.
   build: { inlineStylesheets: 'auto', ...(pages ? { format: 'file' } : {}) },
   devToolbar: { enabled: false },
+
+  /**
+   * Vercel terminates TLS at the edge and forwards the real host in
+   * X-Forwarded-Host. Astro ignores that header unless the domain is listed
+   * here, and then reconstructs Astro.url from the internal host instead —
+   * which makes its cross-site check reject every form POST on the site,
+   * including the admin login. Listing the domains fixes the login and keeps
+   * the check doing its job.
+   */
+  security: {
+    allowedDomains: [
+      { hostname: '**.vercel.app', protocol: 'https' },
+      { hostname: 'rabotilnitsa.edinpodarak.com', protocol: 'https' },
+      { hostname: '**.edinpodarak.com', protocol: 'https' },
+    ],
+  },
   vite: {
     // Readable from both server code and the browser bundles, so one flag
     // drives prerendering, link prefixes and the sign-up fallback.
