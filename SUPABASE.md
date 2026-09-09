@@ -1,7 +1,16 @@
 # Connecting Supabase
 
-The site runs without it — everything falls back to a local file — so do this
-when you are ready to put it online. Roughly 20 minutes.
+**Already done.** The project exists, the migrations are applied, the demo
+workshops are seeded and the live site books through it. `tools/setup-supabase.mjs`
+did all of it and is safe to re-run — use it to rebuild the project from
+scratch, or to re-apply the migrations after changing them.
+
+```bash
+npx supabase login        # once, needs a browser
+node tools/setup-supabase.mjs
+```
+
+What follows is what it does, and how to do it by hand if you ever need to.
 
 ## 1. Create the project
 
@@ -89,6 +98,29 @@ select cron.schedule(
   $$select public.purge_old_registrations()$$
 );
 ```
+
+## Verifying it, rather than assuming it
+
+`tools/rls-check.mjs` attacks the live database with the **publishable (anon)
+key** — the one designed to be safe in a browser — and requires that it cannot
+read a registration, write one, edit or delete a workshop, call the booking
+function, or rewrite the site content, while still being able to read seat
+counts. Run it after any change to the policies:
+
+```bash
+SUPABASE_URL=... SUPABASE_ANON_KEY=... node tools/rls-check.mjs
+```
+
+It earned its keep immediately: **`revoke ... from public` was not enough.**
+Supabase sets default privileges that grant `EXECUTE` on every new function to
+`anon` and `authenticated` *explicitly*, and an explicit grant survives a
+revoke from `PUBLIC`. `register_for_event` is `security definer`, so anyone
+holding the publishable key could book seats straight past the API — past the
+rate limit, the honeypot and every validation rule. The migrations now revoke
+from `anon, authenticated` as well.
+
+`tools/live-booking.mjs` does the other half: books a real seat on the live
+site and checks the seat count actually moved.
 
 ## What is protected, and how
 

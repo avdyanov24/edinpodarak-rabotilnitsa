@@ -170,8 +170,14 @@ begin
 end $$;
 
 -- ------------------------------------------------------------- grants ------
-revoke all on function public.register_for_event(uuid, text, text, text, int, text) from public;
-revoke all on function public.cancel_registration(uuid) from public;
+-- Revoking from PUBLIC is not enough. Supabase sets default privileges that
+-- grant EXECUTE on new functions to anon and authenticated *explicitly*, and
+-- an explicit grant survives a revoke from PUBLIC. Both of these are
+-- security definer, so leaving anon able to call them would let anyone
+-- holding the publishable key book seats straight past the API — past the
+-- rate limit, the honeypot and every validation rule.
+revoke all on function public.register_for_event(uuid, text, text, text, int, text) from public, anon, authenticated;
+revoke all on function public.cancel_registration(uuid) from public, anon, authenticated;
 
 grant execute on function public.list_published_events() to anon, authenticated;
 -- The site calls these from the server with the service role, never from the

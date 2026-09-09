@@ -27,5 +27,6 @@ begin
   return v_deleted;
 end $$;
 
-revoke all on function public.purge_old_registrations() from public;
+-- see the note in 0002: an explicit grant to anon survives a revoke from PUBLIC
+revoke all on function public.purge_old_registrations() from public, anon, authenticated;
 grant execute on function public.purge_old_registrations() to service_role;
