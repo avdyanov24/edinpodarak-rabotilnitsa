@@ -28,9 +28,20 @@ for (const [name, w, h] of [['desktop', 1440, 1000], ['mobile', 390, 844]]) {
   // sign-up fallback
   await page.locator('button[data-signup]:not([disabled])').first().click();
   await page.waitForTimeout(500);
+  // The dialog behaves differently depending on whether there is a database
+  // behind it. Read which mode the page is in rather than assuming.
+  const online = await page.evaluate(() =>
+    JSON.parse(document.querySelector('[data-su-brand]').textContent).online);
   const noteSeen = await page.locator('.su__small--note').first().isVisible().catch(() => false);
-  if (!noteSeen) problems.push(`${name}: static sign-up note not visible`);
+  if (online === noteSeen) {
+    problems.push(`${name}: online=${online} but the email-fallback note ${noteSeen ? 'is' : 'is not'} shown`);
+  }
   await page.screenshot({ path: `shots/pages-${name}-dialog.png` });
+
+  // Only exercise the submit when it cannot reach a database — otherwise this
+  // would book a real seat on a live site every time it runs. Booking against
+  // a live database is tools/live-booking.mjs, deliberately separate.
+  if (online) { await ctx.close(); continue; }
 
   // the email fallback: fill it in and make sure it reports honestly
   await page.fill('input[name="full_name"]', 'Мария Петрова');
