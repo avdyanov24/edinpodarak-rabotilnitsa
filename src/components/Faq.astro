@@ -100,8 +100,14 @@ const { items = faq.items } = Astro.props;
 
   @media (max-width: 820px) {
     .faq__grid { grid-template-columns: 1fr; }
-    .faq__head { position: static; }
-    .faq__help { order: 2; }
+    /* One column, so the "didn't find your answer" box has to come after the
+       questions rather than before anyone has read one. `order` only moves
+       grid items, and the box is nested inside the header — display: contents
+       lifts the header's children into the grid so it can be moved. */
+    .faq__head { display: contents; }
+    .faq__title { order: 0; }
+    .faq__items { order: 1; }
+    .faq__help { order: 2; margin-top: clamp(2rem, 6vw, 3rem); }
   }
 </style>
 
