@@ -23,7 +23,10 @@ export default defineConfig({
   // (home, event pages, sitemap, /api, /admin) is rendered on demand.
   ...(pages ? {} : { adapter: node({ mode: 'standalone' }) }),
   image: { service: { entrypoint: 'astro/assets/services/sharp' } },
-  build: { inlineStylesheets: 'auto' },
+  // Pages has no rewrite rules: with directory output every internal link
+  // costs a 301 to add the trailing slash, and the canonical then disagrees
+  // with the URL that was linked. File output is served directly.
+  build: { inlineStylesheets: 'auto', ...(pages ? { format: 'file' } : {}) },
   devToolbar: { enabled: false },
   vite: {
     // Readable from both server code and the browser bundles, so one flag

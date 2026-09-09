@@ -37,6 +37,7 @@ async function resolves(ref) {
   const p = resolve(dist, rel);
   if (await exists(p)) return true;
   if (await exists(join(p, 'index.html'))) return true;
+  if (await exists(`${p}.html`)) return true; // Pages resolves /foo → foo.html
   return false;
 }
 
@@ -76,6 +77,7 @@ for (const file of html) {
   const where = file.slice(dist.length);
   if (!m) problems.push(`${where}: no canonical`);
   else if (!m[1].includes(BASE)) problems.push(`${where}: canonical drops the base → ${m[1]}`);
+  else if (m[1].endsWith('.html')) problems.push(`${where}: canonical exposes .html → ${m[1]}`);
 }
 
 console.log(`${html.length} pages · ${checked} internal references checked`);

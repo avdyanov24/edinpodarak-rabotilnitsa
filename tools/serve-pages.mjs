@@ -23,7 +23,11 @@ createServer(async (req, res) => {
   try {
     if ((await stat(file)).isDirectory()) file = join(file, 'index.html');
   } catch {
-    if (!extname(file)) file += '/index.html';
+    // what GitHub Pages does: /foo → foo.html, then foo/index.html
+    if (!extname(file)) {
+      const asFile = `${file}.html`;
+      file = (await stat(asFile).then(() => true, () => false)) ? asFile : join(file, 'index.html');
+    }
   }
   try {
     const body = await readFile(file);

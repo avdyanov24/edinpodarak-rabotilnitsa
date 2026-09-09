@@ -21,7 +21,12 @@ const {
   jsonLd,
 } = Astro.props;
 
-const canonical = new URL(Astro.url.pathname, Astro.site);
+// The static export writes foo.html and GitHub Pages serves it at /foo, so
+// the path a page renders under is not the URL anyone links to. The canonical
+// has to name the linked one.
+const home = u('/');
+const path = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '');
+const canonical = new URL(!path || path === home.replace(/\/$/, '') ? home : path, Astro.site);
 const ogImage = abs(image, Astro.site);
 ---
 

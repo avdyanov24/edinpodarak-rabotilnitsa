@@ -5,9 +5,13 @@
  */
 const BASE = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
 
-/** Prefix an absolute site path. Leaves tel:, mailto: and full URLs alone. */
-export function u(path: string): string {
-  return path.startsWith('/') ? `${BASE}${path}` : path;
+/**
+ * Prefix an absolute site path. Leaves tel:, mailto: and full URLs alone —
+ * and passes null through, because a workshop saved without a cover image
+ * has none and Astro drops the attribute for us.
+ */
+export function u<T extends string | null | undefined>(path: T): T {
+  return (typeof path === 'string' && path.startsWith('/') ? `${BASE}${path}` : path) as T;
 }
 
 /** Absolute URL for canonicals, OG tags and JSON-LD. */
