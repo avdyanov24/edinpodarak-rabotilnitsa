@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-const BASE = 'http://localhost:4331/edinpodarak-rabotilnitsa';
+const BASE = process.env.CHECK_URL || 'http://localhost:4331/edinpodarak-rabotilnitsa';
 const b = await chromium.launch({ channel: 'chrome' });
 const problems = [];
 for (const [name, w, h] of [['desktop', 1440, 1000], ['mobile', 390, 844]]) {
