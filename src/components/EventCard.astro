@@ -214,7 +214,16 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
   /* Micro-labels: readable in the hand, not just on a desktop. */
   @media (max-width: 560px), (pointer: coarse) {
     .card__tag i { font-size: 0.72rem; letter-spacing: 0.12em; }
-    .card__meta dt { font-size: 0.78rem; }
+    /* Bigger for legibility, but then weight and colour have to do the
+       receding that size used to do — otherwise label and value shout
+       equally and the card reads as a spec sheet. */
+    .card__meta dt {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      width: 4rem;
+      padding-top: 0.1em;
+    }
   }
 
   /* Thumb-sized targets on phones. */

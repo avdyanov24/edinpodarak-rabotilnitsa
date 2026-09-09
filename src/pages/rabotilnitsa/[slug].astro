@@ -250,7 +250,12 @@ const jsonLd = {
 
   /* Micro-labels: readable in the hand, not just on a desktop. */
   @media (max-width: 560px), (pointer: coarse) {
-    .ev__facts dt { font-size: 0.78rem; letter-spacing: 0.1em; }
+    .ev__facts dt {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      color: var(--muted);
+    }
   }
 
   /* Thumb-sized targets on phones. */
