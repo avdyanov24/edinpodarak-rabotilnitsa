@@ -110,48 +110,44 @@ deploy. Public pages send `max-age=60, stale-while-revalidate=600`.
 
 ## Deploying
 
-Two targets, one source tree.
-
-### Node — the real deploy
-
-`npm run build` produces `dist/server` + `dist/client` for the standalone Node
-adapter (Vercel, Fly, a VPS). This is the only target where the whole thing
-works: `/api/register`, the admin panel, cancellation links, and pages rendered
-per request.
+**Vercel.** `npm run build` produces `.vercel/output` via `@astrojs/vercel`;
+Vercel builds it itself on every push to `main`. Setup, environment variables
+and the domain are in [VERCEL.md](VERCEL.md).
 
 DNS for `edinpodarak.com` sits at Jump.bg (`ns1/ns2.jumphosting01.com`), not at
 Sellavi, so the subdomain is a single CNAME. Nothing in the build depends on the
-final hostname — it can run on a `*.vercel.app` URL until DNS is sorted.
+final hostname — it runs on the `*.vercel.app` URL until DNS is sorted.
 
-### GitHub Pages — the public preview
+### No database, no bookings
 
-`npm run build:pages` produces a static `dist/`, published by
-`.github/workflows/pages.yml` on every push to `main`.
+`bookingsPersist()` in `src/lib/env.ts` answers one question: would a booking
+taken right now still be there tomorrow? Supabase always would. The file-backed
+stand-in only would when there is a real disk under it — on Vercel there is
+not, since the filesystem is read-only apart from `/tmp`, which belongs to a
+single instance and is thrown away.
 
-**Pages has no server**, so three things cannot exist there and the build script
-(`tools/build-pages.mjs`) leaves them out of the export entirely:
+When the answer is no, the site says so rather than pretending:
 
-| | on Pages |
-|---|---|
-| `/api/register` | gone — the sign-up form composes an email to Джейля instead |
-| `/admin` | gone — nothing to log in to, and no session secret in a public repo |
-| `/otkazhi/[token]` | gone — cancellation needs to write to the database |
+- the sign-up form composes an email to Джейля instead of posting;
+- `/api/register` returns `503 no_storage`, so a direct post cannot slip through;
+- the admin panel carries a red banner.
 
-Everything else is real: the workshops, the per-event pages, the gallery,
-the animations, the JSON-LD, the sitemap.
+Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, redeploy, and online
+booking turns itself on. No code changes.
 
-Two things about that build worth knowing before touching it:
+### Static export
+
+`npm run build:pages` still produces a serverless static copy — the public
+pages only, no `/api`, `/admin` or `/otkazhi`, sign-up falling back to email.
+It is not deployed anywhere; it exists as a preview build. Two things about it
+worth knowing before touching it:
 
 - **Astro reads `export const prerender` as literal source text**, before Vite
   runs. An env flag or a variable there does not work — it silently prerenders
-  everything, which on the Node deploy means a workshop published in the panel
-  never appears. So the build script flips the literal on disk for the length
-  of the build and puts it back in a `finally`.
-- **A project site lives under `/<repo>/`**, so every absolute path needs that
-  prefix (`src/lib/url.ts`). One missed prefix 404s only in production, so
-  `tools/pages-check.mjs` walks the built HTML and fails the deploy if any
-  internal reference is unprefixed or dead. `tools/serve-pages.mjs` serves
-  `dist/` at the same sub-path locally.
-
-When the real subdomain goes live, the Pages copy should either be taken down or
-set to `noindex` — otherwise it competes with the production site in Google.
+  everything, which on the real deploy means a workshop published in the panel
+  never appears. So `tools/build-pages.mjs` flips the literal on disk for the
+  length of the build and puts it back in a `finally`.
+- **A static copy lives under a sub-path**, so every absolute path needs that
+  prefix (`src/lib/url.ts`). `tools/pages-check.mjs` walks the built HTML and
+  fails if any internal reference is unprefixed or dead;
+  `tools/serve-pages.mjs` serves it at the same sub-path locally.
