@@ -29,6 +29,10 @@ ok('the seeded workshops are listed', (await p.locator('a.ev').count()) >= 3,
    `${await p.locator('a.ev').count()} listed`);
 
 // ---------- creating a workshop ----------
+// An interrupted run leaves the test workshop behind, and the slug is unique,
+// so the next run would fail on the duplicate. Clear it first.
+await removeTestWorkshop();
+
 await p.click('text=+ Нова работилница');
 await p.waitForSelector('#title');
 await p.fill('#title', 'Пролетна работилница');
@@ -105,11 +109,35 @@ await p.waitForURL((u) => u.searchParams.get('zapazeno') === '1', { timeout: 800
 const home = await (await p.request.get(`${B}/`)).text();
 ok('the new question reaches the public page', home.includes('Мога ли да платя с карта?'));
 
+// ---------- deleting it again ----------
+const gone = await removeTestWorkshop();
+ok('a workshop can be deleted', gone, gone ? 'removed' : 'delete control did not work');
+{
+  const home = await (await p.request.get(`${B}/?v=${Date.now()}`)).text();
+  ok('it disappears from the public page', !home.includes('Пролетна работилница'));
+}
+
 // ---------- signing out ----------
 await p.goto(`${B}/admin/izhod`, { waitUntil: 'networkidle' });
 ok('signing out returns to the login', p.url().includes('/admin/vhod'));
 await p.goto(`${B}/admin/zapisvaniya/${eventId}`, { waitUntil: 'networkidle' });
 ok('personal data is unreachable once signed out', p.url().includes('/admin/vhod'), p.url());
+
+/**
+ * Deletes the workshop this check creates, through the panel's own delete
+ * button. Returns false if there was nothing to delete.
+ */
+async function removeTestWorkshop() {
+  await p.goto(`${B}/admin`, { waitUntil: 'networkidle' });
+  const row = p.locator('a.ev', { hasText: 'Пролетна работилница' }).first();
+  if (!(await row.count())) return false;
+  await row.click();
+  await p.waitForSelector('#title');
+  p.once('dialog', (d) => d.accept());
+  await p.click('button[value=delete]');
+  await p.waitForTimeout(1200);
+  return (await p.locator('a.ev', { hasText: 'Пролетна работилница' }).count()) === 0;
+}
 
 await b.close();
 let failed = 0;
