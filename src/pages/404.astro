@@ -1,0 +1,47 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { brand } from '../data/site';
+import { u } from '../lib/url';
+---
+
+<Base
+  title="Няма такава страница · Работилница с Джейля"
+  description="Страницата, която търсиш, я няма. Виж следващите работилници."
+>
+  <Header />
+  <main id="main" class="nf">
+    <div class="wrap--narrow nf__in">
+      <p class="nf__code">404</p>
+      <h1 class="nf__title">Тази страница я няма.</h1>
+      <p class="nf__body">
+        Може работилницата да е минала или линкът да е сбъркан. Виж кои дати са
+        свободни — или ми се обади на
+        <a class="link" href={`tel:${brand.phone}`}>{brand.phoneDisplay}</a>.
+      </p>
+      <p class="nf__act">
+        <a class="btn" href={u('/#rabotilnitsi')}>Виж работилниците</a>
+        <a class="link nf__home" href={u('/')}>Към началото</a>
+      </p>
+    </div>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .nf { padding-block: 9rem clamp(5rem, 9vw, 8rem); background: var(--paper); }
+  .nf__in { text-align: center; }
+  .nf__code {
+    font-family: var(--display);
+    font-size: clamp(4rem, 16vw, 9rem);
+    line-height: 0.9;
+    color: var(--moss);
+    opacity: 0.14;
+    margin: 0;
+  }
+  .nf__title { font-size: var(--step-3); margin: -0.4em 0 1rem; }
+  .nf__body { color: var(--muted); max-width: 34rem; margin: 0 auto 2.4rem; }
+  .nf__act { display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center; justify-content: center; }
+  .nf__home { font-size: var(--step--1); }
+</style>

@@ -1,0 +1,90 @@
+---
+import { u } from '../lib/url';
+import { manifesto } from '../data/site';
+const words = manifesto.text.split(' ');
+---
+
+<section class="man section" data-manifesto>
+  <div class="wrap--narrow">
+
+    <p class="man__text">
+      {words.map((w, i) => (
+        <span class="man__w" style={`--i:${i}; --n:${words.length}`}>{w}{' '}</span>
+      ))}
+    </p>
+
+    <p class="man__note" data-reveal>{manifesto.footnote}</p>
+  </div>
+
+  <img class="man__leaf man__leaf--a" src={u("/media/texture/lishei.webp")} alt="" aria-hidden="true" loading="lazy" />
+  <img class="man__leaf man__leaf--b" src={u("/media/texture/rastezh.webp")} alt="" aria-hidden="true" loading="lazy" />
+</section>
+
+<style>
+  .man { position: relative; overflow: hidden; text-align: center; }
+  .man .eyebrow { justify-content: center; }
+
+  .man__text {
+    font-family: var(--display);
+    font-size: var(--step-3);
+    line-height: 1.28;
+    letter-spacing: -0.015em;
+    margin: 0 0 2.6rem;
+    text-wrap: pretty;
+  }
+  /* Each word warms from faint to full as the passage scrolls through view. */
+  .man__w { transition: color 0.5s var(--ease); }
+  :global(html.js) .man__w { color: color-mix(in oklab, var(--ink) 16%, transparent); }
+  :global(html.js) .man__w.is-lit { color: var(--ink); }
+
+  .man__note {
+    font-size: var(--step-0);
+    color: var(--muted);
+    max-width: 44ch;
+    margin-inline: auto;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule-soft);
+  }
+
+  .man__leaf {
+    position: absolute;
+    width: clamp(120px, 16vw, 230px);
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 50%;
+    opacity: 0.5;
+    filter: saturate(0.8);
+    pointer-events: none;
+  }
+  .man__leaf--a { left: -4%; top: 14%; }
+  .man__leaf--b { right: -5%; bottom: 10%; }
+  @media (max-width: 900px) { .man__leaf { display: none; } }
+</style>
+
+<script>
+  const root = document.querySelector('[data-manifesto]');
+  const words = root?.querySelectorAll<HTMLElement>('.man__w');
+  const text = root?.querySelector('.man__text') as HTMLElement | null;
+
+  if (words?.length && text) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      words.forEach((w) => w.classList.add('is-lit'));
+    } else {
+      let ticking = false;
+      const update = () => {
+        const rect = text.getBoundingClientRect();
+        const vh = window.innerHeight;
+        // 0 when the block enters from below, 1 once it has reached the upper third
+        const progress = (vh * 0.85 - rect.top) / (rect.height + vh * 0.35);
+        const lit = Math.round(Math.max(0, Math.min(1, progress)) * words.length);
+        words.forEach((w, i) => w.classList.toggle('is-lit', i < lit));
+        ticking = false;
+      };
+      window.addEventListener('scroll', () => {
+        if (!ticking) { ticking = true; requestAnimationFrame(update); }
+      }, { passive: true });
+      window.addEventListener('resize', update, { passive: true });
+      update();
+    }
+  }
+</script>

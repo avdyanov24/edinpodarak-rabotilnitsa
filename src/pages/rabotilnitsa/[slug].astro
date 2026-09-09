@@ -1,0 +1,248 @@
+---
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import SignupDialog from '../../components/SignupDialog.astro';
+import SeatDots from '../../components/SeatDots.astro';
+import { getPublishedEvents } from '../../lib/events';
+import { brand } from '../../data/site';
+import {
+  fmtDateFull, fmtWeekday, fmtTime, fmtDuration, fmtPrice,
+  availability, endsAt, isoDuration,
+} from '../../lib/format';
+import { root, u } from '../../lib/url';
+
+export const prerender = false;
+
+/**
+ * Only used by the static export — a Node deploy looks the workshop up per
+ * request, so a date published in the panel is live straight away.
+ */
+export async function getStaticPaths() {
+  if (!import.meta.env.PUBLIC_PAGES) return [];
+  const all = await getPublishedEvents();
+  return all.map((e) => ({ params: { slug: e.slug } }));
+}
+
+if (!import.meta.env.PUBLIC_PAGES) {
+  Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+}
+
+const event = (await getPublishedEvents()).find((e) => e.slug === Astro.params.slug);
+if (!event) return new Response('Няма такава работилница.', { status: 404 });
+const a = availability(event.capacity, event.seats_taken, event.registrations_open);
+const site = root(Astro.site);
+const past = new Date(event.starts_at).getTime() < Date.now();
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name: event.title,
+  description: event.summary,
+  url: `${site}/rabotilnitsa/${event.slug}`,
+  image: `${site}${event.cover_image}`,
+  startDate: event.starts_at,
+  endDate: endsAt(event.starts_at, event.duration_minutes),
+  duration: isoDuration(event.duration_minutes),
+  inLanguage: 'bg',
+  eventStatus: 'https://schema.org/EventScheduled',
+  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  isAccessibleForFree: false,
+  maximumAttendeeCapacity: event.capacity,
+  remainingAttendeeCapacity: a.left,
+  typicalAgeRange: event.min_age ? `${event.min_age}-` : undefined,
+  location: {
+    '@type': 'Place',
+    name: event.venue_name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: event.venue_address,
+      addressLocality: event.city,
+      addressCountry: 'BG',
+    },
+  },
+  organizer: {
+    '@type': 'Organization',
+    name: brand.owner,
+    url: site,
+    email: brand.email,
+    telephone: brand.phone,
+  },
+  performer: { '@type': 'Person', name: brand.owner },
+  offers: {
+    '@type': 'Offer',
+    price: (event.price_cents / 100).toFixed(2),
+    priceCurrency: 'EUR',
+    availability: a.full ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+    url: `${site}/rabotilnitsa/${event.slug}`,
+    validFrom: new Date().toISOString(),
+  },
+};
+---
+
+<Base
+  title={`${event.title} · ${fmtDateFull(event.starts_at)} · Работилница с Джейля`}
+  description={event.summary}
+  image={event.cover_image}
+  jsonLd={jsonLd}
+>
+  <Header />
+
+  <main id="main" class="ev">
+    <article>
+      <header class="ev__hero">
+        <div class="wrap ev__heroGrid">
+          <div class="ev__heroText">
+            <a class="ev__back link" href={u("/#rabotilnitsi")}>← Всички работилници</a>
+            <h1 class="ev__title">{event.title}</h1>
+            <p class="ev__summary">{event.summary}</p>
+
+            {past ? (
+              <p class="ev__past">Тази работилница вече мина. Виж <a class="link" href={u("/#rabotilnitsi")}>следващите дати</a>.</p>
+            ) : (
+              <div class="ev__cta">
+                {a.full && event.waitlist_enabled ? (
+                  <button class="btn" type="button" data-signup={event.id} data-waitlist="1">
+                    Влез в листа на чакащите
+                  </button>
+                ) : (
+                  <button class="btn" type="button" data-signup={event.id} disabled={!event.registrations_open}>
+                    Запиши се
+                  </button>
+                )}
+                <SeatDots capacity={event.capacity} taken={event.seats_taken} label={a.label} />
+              </div>
+            )}
+          </div>
+
+          <figure class="ev__figure">
+            <img src={u(event.cover_image)} alt={`Творба от работилницата „${event.title}“`} width="800" height="1000" />
+          </figure>
+        </div>
+      </header>
+
+      <div class="wrap ev__body">
+        <div class="ev__main">
+          <h2 class="ev__h2">За тази работилница</h2>
+          <p class="ev__lead">{event.description}</p>
+
+          <h2 class="ev__h2">Какво е включено в цената</h2>
+          <ul class="ev__inc">
+            {event.includes.map((item) => <li>{item}</li>)}
+          </ul>
+
+          {event.bring_note && (
+            <>
+              <h2 class="ev__h2">Какво да носиш</h2>
+              <p>{event.bring_note}</p>
+            </>
+          )}
+        </div>
+
+        <aside class="ev__side">
+          <dl class="ev__facts">
+            <div>
+              <dt>Дата</dt>
+              <dd>{fmtDateFull(event.starts_at)}<br /><span>{fmtWeekday(event.starts_at)}</span></dd>
+            </div>
+            <div>
+              <dt>Начало</dt>
+              <dd>{fmtTime(event.starts_at)} ч.<br /><span>{fmtDuration(event.duration_minutes)}</span></dd>
+            </div>
+            <div>
+              <dt>Място</dt>
+              <dd>
+                {event.venue_name}<br />
+                <span>{event.venue_address}</span><br />
+                <a class="link" href={event.venue_map_url}>Виж на картата</a>
+              </dd>
+            </div>
+            <div>
+              <dt>Цена</dt>
+              <dd>{fmtPrice(event.price_cents)}<br /><span>{event.price_note}</span></dd>
+            </div>
+            {event.min_age && (
+              <div>
+                <dt>Възраст</dt>
+                <dd>от {event.min_age} години</dd>
+              </div>
+            )}
+            {event.host_note && (
+              <div><dt>Водещ</dt><dd>{event.host_note}</dd></div>
+            )}
+          </dl>
+
+          <p class="ev__help">
+            Имаш въпрос? Обади се на <a class="link" href={`tel:${brand.phone}`}>{brand.phoneDisplay}</a>
+            или пиши в <a class="link" href={brand.instagram}>Instagram</a>.
+          </p>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <Footer />
+  <SignupDialog events={[event]} />
+</Base>
+
+<style>
+  .ev__hero { padding-top: 7rem; padding-bottom: clamp(2.5rem, 5vw, 4rem); background: var(--paper-warm); }
+  .ev__heroGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+  .ev__back { font-size: var(--step--1); color: var(--moss); text-decoration: none; font-weight: 600; display: inline-block; margin-bottom: 1.6rem; }
+  .ev__title { font-size: var(--step-4); margin-bottom: 1rem; }
+  .ev__summary { font-size: var(--step-1); color: var(--muted); max-width: 40ch; margin-bottom: 2rem; }
+  .ev__cta { display: grid; gap: 1.1rem; justify-items: start; }
+  .ev__past { padding: 1rem 1.2rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; margin: 0; }
+
+  .ev__figure { margin: 0; }
+  .ev__figure img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 24px 50px -28px rgb(18 33 26 / 0.6);
+  }
+
+  .ev__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    padding-block: clamp(3rem, 6vw, 5rem);
+    align-items: start;
+  }
+  .ev__h2 { font-size: var(--step-2); margin-bottom: 0.8rem; }
+  .ev__h2:not(:first-child) { margin-top: 2.5rem; }
+  .ev__lead { font-size: var(--step-1); line-height: 1.7; }
+  .ev__inc { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.6rem; }
+  .ev__inc li { display: flex; gap: 0.8rem; }
+  .ev__inc li::before { content: "✕"; color: var(--moss); transform: rotate(45deg); font-size: 0.8em; padding-top: 0.35em; }
+
+  .ev__side {
+    position: sticky;
+    top: 6.5rem;
+    padding: clamp(1.4rem, 2.5vw, 2rem);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule-soft);
+    border-radius: 6px;
+  }
+  .ev__facts { margin: 0 0 1.5rem; display: grid; gap: 1.1rem; }
+  .ev__facts dt {
+    font-size: 0.64rem; letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 700; color: var(--moss); margin-bottom: 0.2rem;
+  }
+  .ev__facts dd { margin: 0; font-family: var(--display); font-size: var(--step-1); line-height: 1.35; }
+  .ev__facts dd span { font-family: var(--sans); font-size: var(--step--1); color: var(--muted); }
+  .ev__facts dd .link { font-family: var(--sans); font-size: var(--step--1); color: var(--moss); }
+  .ev__help { margin: 0; padding-top: 1.2rem; border-top: 1px solid var(--rule-soft); font-size: var(--step--1); color: var(--muted); }
+
+  @media (max-width: 900px) {
+    .ev__heroGrid, .ev__body { grid-template-columns: 1fr; }
+    .ev__side { position: static; }
+    .ev__figure { order: -1; }
+  }
+</style>

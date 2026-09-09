@@ -1,0 +1,40 @@
+---
+import { u } from '../lib/url';
+import Base from './Base.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props { title: string; description: string; updated: string }
+const { title, description, updated } = Astro.props;
+---
+
+<Base title={`${title} · Работилница с Джейля`} description={description}>
+  <Header />
+  <main id="main" class="lg">
+    <div class="wrap--narrow">
+      <a class="lg__back link" href={u("/")}>← Обратно към сайта</a>
+      <h1 class="lg__title">{title}</h1>
+      <p class="lg__updated">Последна промяна: {updated}</p>
+      <div class="lg__body"><slot /></div>
+    </div>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  .lg { padding-block: 8rem clamp(4rem, 8vw, 7rem); background: var(--paper); }
+  .lg__back { font-size: var(--step--1); color: var(--moss); text-decoration: none; font-weight: 600; }
+  .lg__title { font-size: var(--step-4); margin: 1.5rem 0 0.6rem; }
+  .lg__updated { color: var(--muted); font-size: var(--step--1); margin-bottom: 3rem; }
+  .lg__body :global(h2) { font-size: var(--step-2); margin: 2.6rem 0 0.8rem; }
+  .lg__body :global(h3) { font-size: var(--step-1); margin: 1.8rem 0 0.5rem; }
+  .lg__body :global(ul) { padding-left: 1.2rem; display: grid; gap: 0.4rem; margin-bottom: 1.2rem; }
+  .lg__body :global(p) { max-width: var(--measure); }
+  .lg__body :global(.todo) {
+    background: color-mix(in oklab, var(--brass) 16%, transparent);
+    border: 1px solid color-mix(in oklab, var(--brass) 50%, transparent);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    font-size: var(--step--1);
+  }
+</style>

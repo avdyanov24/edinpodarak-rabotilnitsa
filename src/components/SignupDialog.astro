@@ -1,0 +1,439 @@
+---
+import { u } from '../lib/url';
+import type { WorkshopEvent } from '../data/events';
+import { fmtWhen, fmtPrice, fmtDuration, availability } from '../lib/format';
+import { brand } from '../data/site';
+
+interface Props { events: WorkshopEvent[] }
+const { events } = Astro.props;
+
+// The static export has no /api/register behind it, so the form composes an
+// email instead of pretending to book a seat. See tools/build-pages.mjs.
+const staticMode = Boolean(import.meta.env.PUBLIC_PAGES);
+
+// Only what the dialog needs, so we don't ship the full descriptions twice.
+const payload = events.map((e) => ({
+  id: e.id,
+  title: e.title,
+  cover: u(e.cover_image),
+  when: fmtWhen(e.starts_at),
+  venue: `${e.venue_name}, ${e.venue_address}`,
+  price: fmtPrice(e.price_cents),
+  duration: fmtDuration(e.duration_minutes),
+  seats: availability(e.capacity, e.seats_taken, e.registrations_open),
+  minAge: e.min_age,
+}));
+---
+
+<dialog class="su" data-signup-dialog aria-labelledby="su-title">
+  <form class="su__form" method="dialog" data-signup-form novalidate>
+    <button class="su__close" type="button" data-signup-close>
+      <span class="vh">Затвори</span><span aria-hidden="true">✕</span>
+    </button>
+
+    <div class="su__grid">
+      <aside class="su__aside">
+        <img class="su__cover" data-su-cover alt="" width="320" height="400" />
+        <div class="su__facts">
+          <h3 class="su__event" data-su-title></h3>
+          <dl>
+            <div><dt>Кога</dt><dd data-su-when></dd></div>
+            <div><dt>Къде</dt><dd data-su-venue></dd></div>
+            <div><dt>Колко</dt><dd data-su-price></dd></div>
+          </dl>
+          <p class="su__seats" data-su-seats></p>
+        </div>
+      </aside>
+
+      <div class="su__main">
+        <h2 class="su__title" id="su-title">Пази ми място</h2>
+        <p class="su__lede" data-su-lede>
+          Плащаш на място в деня на работилницата. Ако нещо се промени, просто ми пиши.
+        </p>
+
+        <div class="su__fields">
+          <label class="fld">
+            <span class="fld__label">Име и фамилия <b aria-hidden="true">*</b></span>
+            <input class="fld__input" type="text" name="full_name" required autocomplete="name" placeholder="Мария Петрова" />
+            <span class="fld__err" data-err="full_name"></span>
+          </label>
+
+          <label class="fld">
+            <span class="fld__label">Телефон <b aria-hidden="true">*</b></span>
+            <input class="fld__input" type="tel" name="phone" required autocomplete="tel" inputmode="tel" placeholder="0888 123 456" />
+            <span class="fld__err" data-err="phone"></span>
+          </label>
+
+          <label class="fld">
+            <span class="fld__label">Имейл <b aria-hidden="true">*</b></span>
+            <input class="fld__input" type="email" name="email" required autocomplete="email" placeholder="maria@example.com" />
+            <span class="fld__hint">Пращам потвърждение и напомняне ден преди работилницата.</span>
+            <span class="fld__err" data-err="email"></span>
+          </label>
+
+          <label class="fld fld--narrow">
+            <span class="fld__label">Колко места</span>
+            <select class="fld__input" name="people_count" data-su-people>
+              <option value="1">1 място</option>
+              <option value="2">2 места</option>
+              <option value="3">3 места</option>
+              <option value="4">4 места</option>
+            </select>
+          </label>
+
+          <label class="fld fld--full">
+            <span class="fld__label">Бележка <span class="fld__opt">по желание</span></span>
+            <textarea class="fld__input" name="note" rows="2" placeholder="Алергия, идвам с приятелка, каквото се сетиш."></textarea>
+          </label>
+
+          <label class="chk fld--full">
+            <input type="checkbox" name="consent" required />
+            <span>
+              Съгласявам се името, телефонът и имейлът ми да се използват само за
+              това записване. Виж <a class="link" href={u("/poveritelnost")} target="_blank">политиката за поверителност</a>.
+            </span>
+          </label>
+          <span class="fld__err fld--full" data-err="consent"></span>
+        </div>
+
+        <!-- honeypot: real people never fill this in -->
+        <div class="su__hp" aria-hidden="true">
+          <label>Не попълвайте това поле<input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+        </div>
+
+        <div class="su__actions">
+          <button class="btn su__submit" type="submit" data-su-submit>Запиши ме</button>
+          <p class="su__small">Онлайн не се плаща нищо.</p>
+          {staticMode && (
+            <p class="su__small su__small--note">
+              В тази версия заявката тръгва по имейл — отговарям до няколко часа.
+            </p>
+          )}
+        </div>
+
+        <div class="su__status" data-su-status role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<script is:inline type="application/json" data-su-data set:html={JSON.stringify(payload)}></script>
+<script is:inline type="application/json" data-su-brand set:html={JSON.stringify({ phone: brand.phone, phoneDisplay: brand.phoneDisplay, instagram: brand.instagram, email: brand.email })}></script>
+
+<style>
+  .su {
+    border: 0;
+    padding: 0;
+    width: min(96vw, 62rem);
+    max-height: 92vh;
+    background: var(--paper);
+    border-radius: 8px;
+    overflow: hidden;
+    color: var(--ink);
+  }
+  .su::backdrop { background: rgb(9 20 14 / 0.86); backdrop-filter: blur(8px); }
+  .su[open] { animation: suIn 0.5s var(--ease-out); }
+  @keyframes suIn { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
+
+  .su__form { margin: 0; }
+  .su__grid { display: grid; grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr); max-height: 92vh; }
+
+  .su__close {
+    position: absolute;
+    top: 0.9rem; right: 0.9rem;
+    z-index: 3;
+    width: 2.4rem; height: 2.4rem;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background: color-mix(in oklab, var(--paper) 80%, transparent);
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+  }
+  .su__close:hover { background: var(--paper-warm); }
+
+  /* --- left: which workshop you're booking --- */
+  .su__aside { position: relative; background: var(--forest-dp); color: var(--cream); display: grid; align-content: start; }
+  .su__cover { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; opacity: 0.85; }
+  .su__facts { padding: clamp(1.2rem, 2.4vw, 1.9rem); display: grid; gap: 1rem; }
+  .su__event { font-size: var(--step-2); }
+  .su__facts dl { margin: 0; display: grid; gap: 0.55rem; font-size: var(--step--1); }
+  .su__facts dl > div { display: grid; gap: 0.1rem; }
+  .su__facts dt {
+    font-size: 0.7rem; letter-spacing: 0.01em;
+    color: var(--lichen); font-weight: 700;
+  }
+  .su__facts dd { margin: 0; color: color-mix(in oklab, var(--cream) 88%, transparent); }
+  .su__seats {
+    margin: 0;
+    padding: 0.5em 0.9em;
+    border: 1px solid color-mix(in oklab, var(--cream) 28%, transparent);
+    border-radius: 100px;
+    justify-self: start;
+    font-size: var(--step--1);
+  }
+  .su__seats.is-scarce { border-color: var(--clay); background: color-mix(in oklab, var(--clay) 30%, transparent); }
+
+  /* --- right: the form --- */
+  .su__main { padding: clamp(1.5rem, 3vw, 2.6rem); overflow-y: auto; }
+  .su__title { font-size: var(--step-3); margin-bottom: 0.5rem; }
+  .su__lede { color: var(--muted); font-size: var(--step--1); margin-bottom: 1.8rem; }
+
+  .su__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .fld { display: grid; gap: 0.35rem; }
+  .fld--full, .su__fields > .fld:nth-child(1), .su__fields > .fld:nth-child(3) { grid-column: 1 / -1; }
+  .fld--narrow { grid-column: auto; }
+  .fld__label { font-size: 0.78rem; letter-spacing: 0.01em; font-weight: 700; }
+  .fld__label b { color: var(--clay-ink); }
+  .fld__opt { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
+  .fld__input {
+    font: inherit;
+    font-size: var(--step-0);
+    padding: 0.75em 0.9em;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--paper-warm);
+    color: inherit;
+    width: 100%;
+    transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  }
+  .fld__input:focus {
+    outline: none;
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--moss) 22%, transparent);
+  }
+  textarea.fld__input { resize: vertical; min-height: 3.4rem; }
+  .fld__hint { font-size: 0.72rem; color: var(--muted); }
+  .fld__err { font-size: 0.75rem; color: var(--clay-ink); font-weight: 600; }
+  .fld__err:empty { display: none; }
+  .fld.has-error .fld__input { border-color: var(--clay); }
+
+  .chk { display: flex; gap: 0.7rem; align-items: start; font-size: var(--step--1); color: var(--muted); }
+  .chk input { margin-top: 0.28em; width: 1.05rem; height: 1.05rem; accent-color: var(--moss); flex: none; }
+
+  .su__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+  .su__actions { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: 1.6rem; }
+  .su__small { margin: 0; font-size: 0.75rem; color: var(--muted); }
+  .su__small--note { flex-basis: 100%; color: var(--clay-ink); }
+  .su__submit[aria-busy='true'] { opacity: 0.7; pointer-events: none; }
+
+  .su__status { margin-top: 1.2rem; }
+  .su__status:empty { display: none; }
+  .su__msg { padding: 1rem 1.2rem; border-radius: 6px; font-size: var(--step--1); margin: 0; }
+  .su__msg--ok { background: color-mix(in oklab, var(--moss) 16%, transparent); border: 1px solid color-mix(in oklab, var(--moss) 40%, transparent); }
+  .su__msg--wait { background: color-mix(in oklab, var(--brass) 16%, transparent); border: 1px solid color-mix(in oklab, var(--brass) 45%, transparent); }
+  .su__msg--err { background: color-mix(in oklab, var(--clay) 12%, transparent); border: 1px solid color-mix(in oklab, var(--clay) 45%, transparent); }
+  .su__msg strong { display: block; font-family: var(--display); font-size: var(--step-1); margin-bottom: 0.25rem; }
+
+  @media (max-width: 780px) {
+    .su__grid { grid-template-columns: 1fr; overflow-y: auto; }
+    .su__cover { aspect-ratio: 16 / 9; }
+    .su__fields { grid-template-columns: 1fr; }
+    .fld--narrow { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .su[open] { animation: none; } }
+</style>
+
+<script>
+  interface Seats { left: number; full: boolean; scarce: boolean; label: string }
+  interface EventLite {
+    id: string; title: string; cover: string; when: string; venue: string;
+    price: string; duration: string; seats: Seats; minAge: number | null;
+  }
+
+  const read = <T,>(sel: string): T =>
+    JSON.parse(document.querySelector(sel)?.textContent ?? 'null');
+
+  const data: EventLite[] = read('[data-su-data]') ?? [];
+  const contact = read<{ phone: string; phoneDisplay: string; instagram: string; email: string }>('[data-su-brand]');
+
+  const dialog = document.querySelector('[data-signup-dialog]') as HTMLDialogElement | null;
+  const form = document.querySelector('[data-signup-form]') as HTMLFormElement | null;
+  const statusBox = document.querySelector('[data-su-status]') as HTMLElement | null;
+  const submit = document.querySelector('[data-su-submit]') as HTMLButtonElement | null;
+
+  let current: EventLite | null = null;
+  let isWaitlist = false;
+  let lastFocused: HTMLElement | null = null;
+
+  const $ = (sel: string) => document.querySelector(sel) as HTMLElement | null;
+
+  function fill(event: EventLite, waitlist: boolean) {
+    current = event;
+    isWaitlist = waitlist;
+
+    const cover = $('[data-su-cover]') as HTMLImageElement | null;
+    if (cover) { cover.src = event.cover; cover.alt = `Творба от „${event.title}“`; }
+
+    const set = (sel: string, text: string) => { const el = $(sel); if (el) el.textContent = text; };
+    set('[data-su-title]', event.title);
+    set('[data-su-when]', event.when);
+    set('[data-su-venue]', event.venue);
+    set('[data-su-price]', `${event.price} · ${event.duration}`);
+
+    const seats = $('[data-su-seats]');
+    if (seats) {
+      seats.textContent = event.seats.label;
+      seats.classList.toggle('is-scarce', event.seats.scarce);
+    }
+
+
+    const h = document.querySelector('#su-title');
+    if (h) h.textContent = waitlist ? 'Влез в листа на чакащите' : 'Пази ми място';
+
+    const lede = $('[data-su-lede]');
+    if (lede) {
+      lede.textContent = waitlist
+        ? 'Мястото ти не е сигурно, но ако някой се откаже, пиша първо на теб.'
+        : 'Плащаш на място в деня на работилницата. Ако нещо се промени, просто ми пиши.';
+    }
+
+    // Never offer more seats than are actually free.
+    const people = $('[data-su-people]') as HTMLSelectElement | null;
+    if (people) {
+      const max = waitlist ? 4 : Math.max(1, Math.min(4, event.seats.left));
+      Array.from(people.options).forEach((opt) => {
+        opt.hidden = Number(opt.value) > max;
+        opt.disabled = Number(opt.value) > max;
+      });
+      people.value = '1';
+    }
+  }
+
+  function open(eventId: string, waitlist: boolean, trigger: HTMLElement) {
+    const event = data.find((e) => e.id === eventId);
+    if (!event || !dialog) return;
+    lastFocused = trigger;
+    if (statusBox) statusBox.innerHTML = '';
+    form?.querySelectorAll('.fld').forEach((f) => f.classList.remove('has-error'));
+    form?.querySelectorAll('[data-err]').forEach((e) => (e.textContent = ''));
+    fill(event, waitlist);
+    dialog.showModal();
+    (form?.querySelector('[name="full_name"]') as HTMLInputElement | null)?.focus();
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-signup]').forEach((btn) => {
+    btn.addEventListener('click', () =>
+      open(btn.dataset.signup!, btn.dataset.waitlist === '1', btn)
+    );
+  });
+
+  $('[data-signup-close]')?.addEventListener('click', () => dialog?.close());
+  dialog?.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog?.addEventListener('close', () => lastFocused?.focus());
+
+  // --- validation, in Bulgarian ---
+  const messages: Record<string, (v: string) => string | null> = {
+    full_name: (v) => (v.trim().length < 2 ? 'Напиши името си.' : null),
+    phone: (v) =>
+      v.replace(/[\s()-]/g, '').match(/^(\+359|0)[0-9]{8,9}$/)
+        ? null
+        : 'Провери телефона — очаквам нещо като 0888 123 456.',
+    email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? null : 'Провери имейла.'),
+  };
+
+  function validate(): boolean {
+    if (!form) return false;
+    let ok = true;
+    for (const [name, check] of Object.entries(messages)) {
+      const input = form.elements.namedItem(name) as HTMLInputElement;
+      const err = form.querySelector(`[data-err="${name}"]`) as HTMLElement;
+      const problem = check(input.value);
+      input.closest('.fld')?.classList.toggle('has-error', Boolean(problem));
+      if (err) err.textContent = problem ?? '';
+      if (problem && ok) { input.focus(); ok = false; }
+    }
+    const consent = form.elements.namedItem('consent') as HTMLInputElement;
+    const consentErr = form.querySelector('[data-err="consent"]') as HTMLElement;
+    if (!consent.checked) {
+      if (consentErr) consentErr.textContent = 'Трябва да се съгласиш, за да те запиша.';
+      if (ok) { consent.focus(); ok = false; }
+    } else if (consentErr) consentErr.textContent = '';
+    return ok;
+  }
+
+  function say(kind: 'ok' | 'wait' | 'err', title: string, body: string) {
+    if (!statusBox) return;
+    statusBox.innerHTML = `<p class="su__msg su__msg--${kind}"><strong>${title}</strong>${body}</p>`;
+  }
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!current || !validate() || !form) return;
+
+    const fd = new FormData(form);
+    if (fd.get('website')) return; // honeypot tripped
+
+    submit?.setAttribute('aria-busy', 'true');
+    const original = submit?.textContent ?? '';
+    if (submit) submit.textContent = 'Записвам…';
+
+    // Static export: no endpoint to post to. Hand the visitor a pre-filled
+    // email rather than a spinner that never resolves.
+    if (import.meta.env.PUBLIC_PAGES) {
+      const lines = [
+        `Работилница: ${current.title}`,
+        `Дата: ${current.when}`,
+        `Име: ${fd.get('full_name')}`,
+        `Телефон: ${fd.get('phone')}`,
+        `Имейл: ${fd.get('email')}`,
+        `Места: ${fd.get('people_count') ?? 1}`,
+        fd.get('note') ? `Бележка: ${fd.get('note')}` : '',
+      ].filter(Boolean).join('\n');
+      const href = `mailto:${contact.email}`
+        + `?subject=${encodeURIComponent(`Записване: ${current.title}`)}`
+        + `&body=${encodeURIComponent(lines)}`;
+      window.location.href = href;
+      form.querySelector('.su__fields')?.setAttribute('hidden', '');
+      form.querySelector('.su__actions')?.setAttribute('hidden', '');
+      say('ok', 'Отвори се имейл с данните ти.',
+        `Изпрати го и ти пиша до няколко часа. Ако нещо не се отвори, обади се на ${contact.phoneDisplay}.`);
+      submit?.removeAttribute('aria-busy');
+      if (submit) submit.textContent = original;
+      return;
+    }
+
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_id: current.id,
+          full_name: fd.get('full_name'),
+          phone: fd.get('phone'),
+          email: fd.get('email'),
+          people_count: Number(fd.get('people_count') ?? 1),
+          note: fd.get('note') || null,
+          consent: true,
+          waitlist_requested: isWaitlist,
+        }),
+      });
+
+      const out = await res.json().catch(() => ({}));
+
+      if (!res.ok) throw new Error(out?.error ?? 'request_failed');
+
+      if (out.status === 'confirmed') {
+        form.querySelector('.su__fields')?.setAttribute('hidden', '');
+        form.querySelector('.su__actions')?.setAttribute('hidden', '');
+        say('ok', 'Готово, мястото е твое.',
+          `Пратих потвърждение на ${fd.get('email')}. До ден преди работилницата ще получиш и напомняне с адреса.`);
+      } else if (out.status === 'waitlist') {
+        form.querySelector('.su__fields')?.setAttribute('hidden', '');
+        form.querySelector('.su__actions')?.setAttribute('hidden', '');
+        say('wait', 'Записах те при чакащите.',
+          'Ако някой се откаже, пиша първо на теб. Случва се по-често, отколкото мислиш.');
+      } else {
+        say('err', 'Местата свършиха, докато попълваше.',
+          `Съжалявам. Обади ми се на ${contact.phoneDisplay} и ще измислим нещо за следващата дата.`);
+      }
+    } catch {
+      say('err', 'Нещо се обърка.',
+        `Не успях да те запиша. Обади се на ${contact.phoneDisplay} или ми пиши в Instagram и ще те запиша на ръка.`);
+    } finally {
+      submit?.removeAttribute('aria-busy');
+      if (submit) submit.textContent = original;
+    }
+  });
+</script>

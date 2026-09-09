@@ -1,0 +1,450 @@
+---
+import { u } from '../lib/url';
+import { gallery } from '../data/site';
+
+const flat = gallery.rows.flat();
+const indexOf = new Map(flat.map((img, i) => [img.src, i]));
+// hung slightly unevenly, the way a real wall looks
+const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
+---
+
+<section class="gal section" id="galeriya">
+  <div class="wrap">
+    <header class="gal__head">
+      <h2 class="gal__title">{gallery.title}</h2>
+      <p class="gal__lede">{gallery.lede}</p>
+      <p class="gal__hint" aria-hidden="true">Кликни, за да разгледаш</p>
+    </header>
+
+    <div class="gal__wall">
+      {gallery.rows.map((row, r) => (
+        <div class="gal__row">
+          {row.map((img, c) => {
+            const i = indexOf.get(img.src)!;
+            return (
+              <figure
+                class="gal__item"
+                style={`--span:${img.span}; --ar:${img.w}/${img.h}; --tilt:${tilts[i % tilts.length]}deg; --reveal-delay:${c * 110}ms`}
+                data-reveal
+              >
+                <button class="gal__btn" type="button" data-lb={i}>
+                  <span class="gal__wire" aria-hidden="true"></span>
+                  <span class="gal__nail" aria-hidden="true"></span>
+                  <span class="gal__frame">
+                    <img
+                      src={u(img.src)}
+                      alt={img.alt}
+                      width={img.w}
+                      height={img.h}
+                      loading={r === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                    />
+                  </span>
+                  <span class="gal__plate">
+                    <span class="gal__plateText">{img.caption}</span>
+                    <span class="gal__plateIcon" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="7" cy="7" r="5" /><path d="M10.8 10.8 14 14" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                  </span>
+                </button>
+              </figure>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<dialog class="lb" data-lb-dialog aria-label="Разглеждане на творби">
+  <div class="lb__stage">
+    <button class="lb__nav lb__nav--prev" type="button" data-lb-prev>
+      <span class="vh">Предишна</span>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M15 4 7 12l8 8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    <figure class="lb__figure">
+      <img class="lb__img" alt="" />
+      <figcaption class="lb__cap">
+        <span data-lb-caption></span>
+        <span class="lb__count" data-lb-count></span>
+      </figcaption>
+    </figure>
+
+    <button class="lb__nav lb__nav--next" type="button" data-lb-next>
+      <span class="vh">Следваща</span>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="m9 4 8 8-8 8" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+  </div>
+
+  <button class="lb__close" type="button" data-lb-close>
+    <span class="vh">Затвори</span>
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+      <path d="m5 5 14 14M19 5 5 19" stroke-linecap="round" />
+    </svg>
+  </button>
+</dialog>
+
+<script is:inline type="application/json" data-lb-data set:html={JSON.stringify(
+  flat.map((i) => ({ src: u(i.src), alt: i.alt, caption: i.caption }))
+)}></script>
+
+<style>
+  .gal { background: var(--paper-warm); }
+  .gal__head { max-width: 48ch; margin-bottom: clamp(3rem, 6vw, 5rem); }
+  .gal__title { font-size: var(--step-4); margin-bottom: 0.9rem; }
+  .gal__lede { color: var(--muted); margin: 0 0 0.9rem; }
+  .gal__hint {
+    margin: 0;
+    font-size: 0.66rem;
+    letter-spacing: 0.02em;
+    color: var(--moss);
+    font-weight: 700;
+  }
+
+  .gal__wall { display: grid; gap: clamp(3.5rem, 6vw, 5.5rem); }
+
+  /* Each row hangs off a picture rail. Tops align, bottoms stay ragged. */
+  .gal__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: clamp(1rem, 2.4vw, 2rem);
+    align-items: start;
+    padding-top: 2.4rem;
+  }
+  .gal__row::before {
+    content: "";
+    position: absolute;
+    inset: 0 -2% auto;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rule) 6%, var(--rule) 94%, transparent);
+  }
+
+  .gal__item { grid-column: span var(--span); margin: 0; }
+
+  .gal__btn {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+  }
+
+  .gal__wire {
+    position: absolute;
+    left: 50%;
+    top: -2.4rem;
+    width: 34%;
+    height: 2.4rem;
+    transform: translateX(-50%);
+    border: 1px solid color-mix(in oklab, var(--ink) 24%, transparent);
+    border-bottom: 0;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .gal__nail {
+    position: absolute;
+    left: 50%;
+    top: calc(-2.4rem - 3px);
+    width: 7px;
+    height: 7px;
+    margin-left: -3.5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #d8c188, var(--brass) 65%, #7d6733);
+    box-shadow: 0 1px 2px rgb(18 33 26 / 0.4);
+    pointer-events: none;
+  }
+
+  .gal__frame {
+    display: block;
+    padding: clamp(0.5rem, 1vw, 0.8rem);
+    background: linear-gradient(150deg, #faf6ee, #ece3d2 52%, #f6f0e3);
+    border: 1px solid color-mix(in oklab, var(--ink) 18%, transparent);
+    border-radius: 2px;
+    box-shadow: 0 2px 3px rgb(18 33 26 / 0.07), 0 16px 30px -20px rgb(18 33 26 / 0.55);
+    transform: rotate(var(--tilt));
+    transform-origin: 50% 0;
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out);
+    overflow: hidden;
+  }
+  .gal__frame img {
+    width: 100%;
+    aspect-ratio: var(--ar);
+    height: auto;
+    object-fit: cover;
+    display: block;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 10%, transparent);
+    transition: transform 0.9s var(--ease-out), filter 0.5s var(--ease);
+  }
+
+  .gal__btn:hover .gal__frame,
+  .gal__btn:focus-visible .gal__frame {
+    transform: rotate(0deg) translateY(-6px);
+    box-shadow: 0 4px 8px rgb(18 33 26 / 0.1), 0 30px 48px -24px rgb(18 33 26 / 0.62);
+  }
+  .gal__btn:hover .gal__frame img { transform: scale(1.04); }
+
+  /* museum plate under each piece */
+  .gal__plate {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding-top: 0.85rem;
+    font-size: var(--step--1);
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .gal__plateText {
+    flex: 1;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    transition: background-size 0.5s var(--ease-out), color 0.3s var(--ease);
+  }
+  .gal__btn:hover .gal__plateText,
+  .gal__btn:focus-visible .gal__plateText { color: var(--ink); background-size: 100% 1px; }
+  .gal__plateIcon {
+    flex: none;
+    align-self: center;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.4s var(--ease), transform 0.4s var(--ease-out);
+    color: var(--moss);
+  }
+  .gal__btn:hover .gal__plateIcon,
+  .gal__btn:focus-visible .gal__plateIcon { opacity: 1; transform: none; }
+
+  /* The wall dims around the piece you are looking at. */
+  @media (hover: hover) and (min-width: 901px) {
+    .gal__wall:has(.gal__btn:hover) .gal__item:not(:hover) .gal__frame { opacity: 0.55; }
+    .gal__item .gal__frame { transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out), opacity 0.5s var(--ease); }
+  }
+
+  @media (max-width: 900px) {
+    .gal__row { display: contents; }
+    .gal__wall { grid-template-columns: repeat(2, 1fr); gap: clamp(2.5rem, 6vw, 3.5rem) clamp(1rem, 3vw, 1.6rem); }
+    .gal__item { grid-column: span 1; padding-top: 2.2rem; }
+    .gal__row::before { display: none; }
+  }
+  /* Two up even on a phone: nine full-width frames would be an endless scroll,
+     and the plate text moves into the lightbox where there is room for it. */
+  @media (max-width: 560px) {
+    .gal__wall { gap: 2rem 0.85rem; }
+    .gal__item { padding-top: 1.8rem; }
+    .gal__wire { top: -1.8rem; height: 1.8rem; }
+    .gal__nail { top: calc(-1.8rem - 3px); }
+    .gal__plate { padding-top: 0.6rem; font-size: 0.72rem; }
+    .gal__plateText {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .gal__plateIcon { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gal__frame { transform: none; }
+    .gal__btn:hover .gal__frame, .gal__btn:focus-visible .gal__frame { transform: none; }
+  }
+</style>
+
+<style>
+  /* --- lightbox --- */
+  .lb {
+    border: 0;
+    padding: 0;
+    max-width: 100vw;
+    max-height: 100vh;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    overflow: hidden;
+    color: var(--cream);
+  }
+  .lb::backdrop { background: rgb(9 20 14 / 0.92); backdrop-filter: blur(10px); }
+  .lb[open] { animation: lbIn 0.35s var(--ease-out); }
+  @keyframes lbIn { from { opacity: 0; } }
+
+  .lb__stage {
+    height: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(0.5rem, 2vw, 2rem);
+    padding: clamp(3.5rem, 6vw, 5rem) clamp(0.75rem, 3vw, 2.5rem);
+  }
+
+  .lb__figure {
+    margin: 0;
+    display: grid;
+    justify-items: center;
+    gap: 1.1rem;
+    min-height: 0;
+  }
+  .lb__img {
+    max-width: 100%;
+    max-height: calc(100vh - 12rem);
+    object-fit: contain;
+    border-radius: 3px;
+    background: var(--paper);
+    padding: clamp(0.4rem, 1vw, 0.7rem);
+    box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.85);
+  }
+  .lb__img.is-swapping { opacity: 0; transform: scale(0.985); }
+  .lb__img { transition: opacity 0.28s var(--ease), transform 0.28s var(--ease-out); }
+
+  .lb__cap {
+    display: flex;
+    align-items: baseline;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+    font-size: var(--step--1);
+    color: color-mix(in oklab, var(--cream) 82%, transparent);
+    max-width: 60ch;
+  }
+  .lb__count { color: var(--lichen); font-variant-numeric: tabular-nums; letter-spacing: 0.1em; }
+
+  .lb__nav, .lb__close {
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid rgb(244 238 226 / 0.3);
+    background: rgb(244 238 226 / 0.06);
+    color: var(--cream);
+    cursor: pointer;
+    transition: background-color 0.3s var(--ease), transform 0.3s var(--ease-out), border-color 0.3s var(--ease);
+  }
+  .lb__nav { width: clamp(2.6rem, 5vw, 3.4rem); aspect-ratio: 1; }
+  .lb__nav:hover { background: rgb(244 238 226 / 0.16); border-color: rgb(244 238 226 / 0.55); }
+  .lb__nav--prev:hover { transform: translateX(-3px); }
+  .lb__nav--next:hover { transform: translateX(3px); }
+
+  .lb__close {
+    position: absolute;
+    top: clamp(0.75rem, 2vw, 1.5rem);
+    right: clamp(0.75rem, 2vw, 1.5rem);
+    width: 2.75rem;
+    aspect-ratio: 1;
+  }
+  .lb__close:hover { background: rgb(244 238 226 / 0.16); }
+
+  @media (max-width: 640px) {
+    .lb__stage { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; padding-inline: 0.75rem; }
+    .lb__figure { grid-row: 1; }
+    .lb__nav { position: absolute; bottom: 1.25rem; }
+    .lb__nav--prev { left: 25%; }
+    .lb__nav--next { right: 25%; }
+    .lb__img { max-height: calc(100vh - 14rem); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lb[open] { animation: none; }
+    .lb__img { transition: none; }
+  }
+</style>
+
+<script>
+  interface Shot { src: string; alt: string; caption: string }
+
+  const shots: Shot[] = JSON.parse(
+    document.querySelector('[data-lb-data]')?.textContent ?? '[]'
+  );
+
+  const dialog = document.querySelector('[data-lb-dialog]') as HTMLDialogElement | null;
+  const img = dialog?.querySelector('.lb__img') as HTMLImageElement | null;
+  const caption = dialog?.querySelector('[data-lb-caption]') as HTMLElement | null;
+  const counter = dialog?.querySelector('[data-lb-count]') as HTMLElement | null;
+
+  let index = 0;
+  let opener: HTMLElement | null = null;
+
+  function show(next: number, animate = true) {
+    if (!img || !shots.length) return;
+    index = (next + shots.length) % shots.length;
+    const shot = shots[index];
+
+    const paint = () => {
+      img.src = shot.src;
+      img.alt = shot.alt;
+      if (caption) caption.textContent = shot.caption;
+      if (counter) counter.textContent = `${index + 1} / ${shots.length}`;
+      img.classList.remove('is-swapping');
+    };
+
+    if (!animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      paint();
+      return;
+    }
+    img.classList.add('is-swapping');
+    window.setTimeout(paint, 130);
+  }
+
+  // Keep the neighbours warm so arrowing through does not flash.
+  function preload(i: number) {
+    for (const n of [i - 1, i + 1]) {
+      const shot = shots[(n + shots.length) % shots.length];
+      if (shot) new Image().src = shot.src;
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-lb]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      opener = btn;
+      show(Number(btn.dataset.lb), false);
+      dialog?.showModal();
+      preload(index);
+    });
+  });
+
+  const step = (delta: number) => { show(index + delta); preload(index + delta); };
+
+  dialog?.querySelector('[data-lb-prev]')?.addEventListener('click', () => step(-1));
+  dialog?.querySelector('[data-lb-next]')?.addEventListener('click', () => step(1));
+  dialog?.querySelector('[data-lb-close]')?.addEventListener('click', () => dialog.close());
+
+  dialog?.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+  });
+
+  // click the backdrop (but not the image or the buttons) to close
+  dialog?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target === dialog || target.classList.contains('lb__stage') || target.classList.contains('lb__figure')) {
+      dialog.close();
+    }
+  });
+
+  dialog?.addEventListener('close', () => {
+    img?.removeAttribute('src');
+    opener?.focus();
+  });
+
+  // swipe on touch
+  let startX = 0;
+  let startY = 0;
+  dialog?.addEventListener('touchstart', (e) => {
+    startX = e.changedTouches[0].clientX;
+    startY = e.changedTouches[0].clientY;
+  }, { passive: true });
+  dialog?.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) step(dx < 0 ? 1 : -1);
+  }, { passive: true });
+</script>

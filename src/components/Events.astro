@@ -1,0 +1,84 @@
+---
+import EventCard from './EventCard.astro';
+import type { WorkshopEvent } from '../data/events';
+import { brand } from '../data/site';
+
+interface Props { events: WorkshopEvent[] }
+const { events } = Astro.props;
+---
+
+<section class="ev section" id="rabotilnitsi">
+  <div class="wrap">
+    <header class="ev__head">
+      <div>
+        <h2 class="ev__title">Избери си вечер</h2>
+      </div>
+      <p class="ev__lede">
+        Местата са малко, защото масата е една. Записваш се тук, плащаш на място
+        в деня на работилницата.
+      </p>
+    </header>
+
+    {events.length > 0 ? (
+      <div class="ev__grid">
+        {events.map((event, i) => <EventCard event={event} index={i} />)}
+      </div>
+    ) : (
+      <div class="ev__empty">
+        <p class="ev__emptyTitle">В момента няма обявена дата.</p>
+        <p>
+          Пиши ми в <a class="link" href={brand.instagram}>Instagram</a> или на
+          <a class="link" href={`tel:${brand.phone}`}>{brand.phoneDisplay}</a> и ще ти кажа
+          кога е следващата.
+        </p>
+      </div>
+    )}
+
+    <p class="ev__foot">
+      Не намираш подходяща дата?
+      <a class="link" href="#grupi">Направи си частна работилница</a> с приятели или с колегите.
+    </p>
+  </div>
+</section>
+
+<style>
+  .ev { background: var(--paper-warm); }
+  .ev__head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 2rem;
+    padding-bottom: clamp(2.5rem, 5vw, 4rem);
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+  }
+  .ev__title { font-size: var(--step-4); }
+  .ev__lede { max-width: 34ch; color: var(--muted); margin: 0; }
+
+  .ev__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: clamp(3rem, 5vw, 4.5rem) clamp(2rem, 3.5vw, 3.5rem);
+  }
+
+  .ev__empty {
+    text-align: center;
+    padding: clamp(3rem, 8vw, 6rem) 1rem;
+    border: 1px dashed var(--rule);
+    border-radius: 10px;
+  }
+  .ev__emptyTitle { font-family: var(--display); font-size: var(--step-2); margin-bottom: 0.4rem; }
+
+  .ev__foot {
+    margin: clamp(3rem, 6vw, 5rem) 0 0;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    color: var(--muted);
+  }
+  .ev__foot .link { color: var(--moss); font-weight: 600; }
+
+  @media (max-width: 760px) {
+    .ev__head { grid-template-columns: 1fr; align-items: start; }
+  }
+</style>

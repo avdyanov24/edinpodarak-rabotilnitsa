@@ -1,0 +1,213 @@
+---
+import { u } from '../lib/url';
+import SeatDots from './SeatDots.astro';
+import type { WorkshopEvent } from '../data/events';
+import { fmtDay, fmtMonth, fmtWeekday, fmtTime, fmtDuration, fmtPrice, availability } from '../lib/format';
+
+interface Props { event: WorkshopEvent; index?: number }
+const { event, index = 0 } = Astro.props;
+const a = availability(event.capacity, event.seats_taken, event.registrations_open);
+const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
+---
+
+<article
+  class={`card${a.full ? ' is-full' : ''}`}
+  id={event.slug}
+  style={`--tilt:${tilt}deg; --reveal-delay:${index * 90}ms`}
+  data-reveal
+>
+  <span class="card__nail" aria-hidden="true"></span>
+  <span class="card__wire" aria-hidden="true"></span>
+
+  <a class="card__frame" href={u(`/rabotilnitsa/${event.slug}`)}>
+    <span class="card__mount">
+      <img
+        class="card__img"
+        src={u(event.cover_image)}
+        alt={`Творба от работилницата „${event.title}“`}
+        loading={index === 0 ? 'eager' : 'lazy'}
+        decoding="async"
+        width="640" height="640"
+      />
+    </span>
+    <span class="card__tag">
+      <b>{fmtDay(event.starts_at)}</b>
+      <i>{fmtMonth(event.starts_at)}</i>
+    </span>
+    {a.full && <span class="card__stamp">Изчерпана</span>}
+  </a>
+
+  <div class="card__plaque">
+    <h3 class="card__title">
+      <a href={u(`/rabotilnitsa/${event.slug}`)}>{event.title}</a>
+    </h3>
+
+    <dl class="card__meta">
+      <div><dt>Кога</dt><dd>{fmtWeekday(event.starts_at)}, {fmtTime(event.starts_at)} ч. · {fmtDuration(event.duration_minutes)}</dd></div>
+      <div><dt>Къде</dt><dd>{event.venue_name}, {event.city}</dd></div>
+      <div><dt>Цена</dt><dd>{fmtPrice(event.price_cents)} <span>с материалите</span></dd></div>
+    </dl>
+
+    <p class="card__summary">{event.summary}</p>
+
+    <SeatDots capacity={event.capacity} taken={event.seats_taken} label={a.label} />
+
+    <div class="card__actions">
+      {a.full && event.waitlist_enabled ? (
+        <button class="btn btn--ghost" type="button" data-signup={event.id} data-waitlist="1">
+          Влез в листа на чакащите
+        </button>
+      ) : (
+        <button class="btn" type="button" data-signup={event.id} disabled={!event.registrations_open}>
+          Запиши се
+        </button>
+      )}
+      <a class="link card__more" href={u(`/rabotilnitsa/${event.slug}`)}>Подробности</a>
+    </div>
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    display: grid;
+    gap: 1.6rem;
+    padding-top: 1.6rem;
+  }
+
+  /* A brass nail and a hanging wire — the card reads as a picture on a wall. */
+  .card__nail {
+    position: absolute;
+    top: 0; left: 50%;
+    width: 7px; height: 7px;
+    margin-left: -3.5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #d8c188, var(--brass) 65%, #7d6733);
+    box-shadow: 0 1px 2px rgb(18 33 26 / 0.4);
+    z-index: 2;
+  }
+  .card__wire {
+    position: absolute;
+    top: 4px; left: 50%;
+    width: 46%; height: 1.55rem;
+    transform: translateX(-50%);
+    border: 1px solid color-mix(in oklab, var(--ink) 26%, transparent);
+    border-bottom: 0;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    opacity: 0.55;
+  }
+
+  .card__frame {
+    position: relative;
+    display: block;
+    padding: clamp(0.7rem, 1.4vw, 1rem);
+    background:
+      linear-gradient(148deg, #f8f4ea, #e9e0cd 48%, #f4eee0);
+    border: 1px solid color-mix(in oklab, var(--ink) 22%, transparent);
+    border-radius: 3px;
+    box-shadow:
+      0 2px 3px rgb(18 33 26 / 0.08),
+      0 16px 30px -18px rgb(18 33 26 / 0.5);
+    transform: rotate(var(--tilt));
+    transform-origin: 50% 0;
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out);
+  }
+  .card__mount {
+    display: block;
+    padding: clamp(0.85rem, 1.8vw, 1.4rem);
+    background: var(--paper-warm);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 10%, transparent);
+  }
+  .card__img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    display: block;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 12%, transparent),
+                inset 0 0 30px rgb(18 33 26 / 0.16);
+    transition: transform 0.9s var(--ease-out), filter 0.6s var(--ease);
+  }
+
+  .card:hover .card__frame,
+  .card__frame:focus-visible {
+    transform: rotate(0deg) translateY(-6px);
+    box-shadow: 0 4px 6px rgb(18 33 26 / 0.1), 0 28px 46px -22px rgb(18 33 26 / 0.6);
+  }
+  .card:hover .card__img { transform: scale(1.035); }
+
+  /* date tag, hung off the frame corner */
+  .card__tag {
+    position: absolute;
+    top: clamp(1.3rem, 2.6vw, 1.9rem);
+    left: clamp(-0.6rem, -1vw, -0.4rem);
+    display: grid;
+    justify-items: center;
+    padding: 0.55rem 0.75rem;
+    background: var(--forest);
+    color: var(--cream);
+    border-radius: 2px;
+    line-height: 1;
+    box-shadow: 0 6px 14px -8px rgb(18 33 26 / 0.7);
+  }
+  .card__tag b { font-family: var(--display); font-size: 1.5rem; font-weight: 500; }
+  .card__tag i {
+    font-style: normal;
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--lichen);
+    margin-top: 3px;
+  }
+
+  .card__stamp {
+    position: absolute;
+    top: 46%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-9deg);
+    padding: 0.4em 1.1em;
+    border: 2px solid var(--clay);
+    color: var(--clay);
+    border-radius: 4px;
+    font-size: var(--step--1);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    background: color-mix(in oklab, var(--paper) 82%, transparent);
+  }
+  .card.is-full .card__img { filter: grayscale(0.55) brightness(0.96); }
+
+  /* museum label */
+  .card__plaque { display: grid; gap: 0.9rem; }
+  .card__title { font-size: var(--step-2); }
+  .card__title a { text-decoration: none; }
+  .card__title a:hover { color: var(--moss); }
+
+  .card__meta { display: grid; gap: 0.3rem; margin: 0; font-size: var(--step--1); }
+  .card__meta > div { display: flex; gap: 0.75rem; }
+  .card__meta dt {
+    flex: none;
+    width: 3.6rem;
+    color: var(--moss);
+    letter-spacing: 0.02em;
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding-top: 0.28em;
+  }
+  .card__meta dd { margin: 0; }
+  .card__meta dd span { color: var(--muted); }
+
+  .card__summary { margin: 0; color: var(--muted); font-size: var(--step-0); }
+
+  .card__actions { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: 0.3rem; }
+  .card__more { font-size: var(--step--1); color: var(--moss); font-weight: 600; }
+  .btn[disabled] { opacity: 0.45; pointer-events: none; }
+
+  /* A 4:5 photo inside a frame makes a very tall card on a phone. */
+  @media (max-width: 620px) {
+    .card__img { aspect-ratio: 1 / 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card__frame { transform: none; }
+    .card:hover .card__frame { transform: none; }
+  }
+</style>

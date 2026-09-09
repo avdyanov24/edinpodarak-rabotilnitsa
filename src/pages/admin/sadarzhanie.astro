@@ -1,0 +1,148 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { readSession, guard } from '../../lib/auth';
+import { getContent, saveContent } from '../../lib/content';
+
+export const prerender = false;
+
+const denied = guard(Astro.cookies, Astro.redirect);
+if (denied) return denied;
+const session = readSession(Astro.cookies)!;
+
+let saved = Astro.url.searchParams.get('zapazeno') === '1';
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+
+  // Parallel arrays from the repeated fields below.
+  const zip = <T,>(names: string[], build: (vals: string[]) => T): T[] => {
+    const cols = names.map((n) => form.getAll(n).map(String));
+    const rows: T[] = [];
+    for (let i = 0; i < (cols[0]?.length ?? 0); i++) {
+      const vals = cols.map((c) => (c[i] ?? '').trim());
+      if (vals.some(Boolean)) rows.push(build(vals));
+    }
+    return rows;
+  };
+
+  const faq = zip(['faq_q', 'faq_a'], ([q, a]) => ({ q, a })).filter((r) => r.q && r.a);
+  const testimonials = zip(['t_quote', 't_name', 't_detail'], ([quote, name, detail]) => ({ quote, name, detail }))
+    .filter((r) => r.quote && r.name);
+
+  try {
+    await saveContent({ faq, testimonials });
+    return Astro.redirect('/admin/sadarzhanie?zapazeno=1', 302);
+  } catch {
+    error = 'Не можах да запазя. Опитай пак.';
+  }
+}
+
+const content = await getContent();
+---
+
+<Admin title="Съдържание" email={session.email}>
+  <div class="pagehead">
+    <div>
+      <h1>Съдържание</h1>
+      <p class="sub">Въпросите и отзивите на сайта. Празен ред = изтрит.</p>
+    </div>
+    <a class="btn btn--ghost" href="/#vaprosi" target="_blank" rel="noopener">Виж ги на сайта ↗</a>
+  </div>
+
+  {saved && <p class="note note--ok">Запазено. Сайтът вече показва новото.</p>}
+  {error && <p class="note note--bad">{error}</p>}
+
+  <form method="POST" class="grid">
+    <section class="card sec">
+      <h2 class="sec__title">Въпроси и отговори</h2>
+      <p class="sub">Показват се в раздел „Преди да се запишеш“.</p>
+      <div data-rows="faq">
+        {content.faq.map((item) => (
+          <div class="rowset">
+            <div class="field">
+              <label>Въпрос</label>
+              <input type="text" name="faq_q" value={item.q} />
+            </div>
+            <div class="field">
+              <label>Отговор</label>
+              <textarea name="faq_a" rows="3">{item.a}</textarea>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button class="btn btn--ghost btn--sm" type="button" data-add="faq">+ Още един въпрос</button>
+    </section>
+
+    <section class="card sec">
+      <h2 class="sec__title">Отзиви</h2>
+      <p class="sub">
+        Тези на сайта в момента са примерни. Замени ги с истински, когато имаш.
+      </p>
+      <div data-rows="t">
+        {content.testimonials.map((t) => (
+          <div class="rowset">
+            <div class="field">
+              <label>Какво е казал</label>
+              <textarea name="t_quote" rows="3">{t.quote}</textarea>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label>Име</label>
+                <input type="text" name="t_name" value={t.name} />
+              </div>
+              <div class="field">
+                <label>На коя работилница беше</label>
+                <input type="text" name="t_detail" value={t.detail} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button class="btn btn--ghost btn--sm" type="button" data-add="t">+ Още един отзив</button>
+    </section>
+
+    <div class="actions"><button class="btn" type="submit">Запази</button></div>
+  </form>
+
+  <template data-tpl="faq">
+    <div class="rowset">
+      <div class="field"><label>Въпрос</label><input type="text" name="faq_q" /></div>
+      <div class="field"><label>Отговор</label><textarea name="faq_a" rows="3"></textarea></div>
+    </div>
+  </template>
+
+  <template data-tpl="t">
+    <div class="rowset">
+      <div class="field"><label>Какво е казал</label><textarea name="t_quote" rows="3"></textarea></div>
+      <div class="row">
+        <div class="field"><label>Име</label><input type="text" name="t_name" /></div>
+        <div class="field"><label>На коя работилница беше</label><input type="text" name="t_detail" /></div>
+      </div>
+    </div>
+  </template>
+
+  <style>
+    .grid { display: grid; gap: 1.25rem; }
+    .sec { padding: 1.25rem; }
+    .sec__title { font-size: 1.05rem; }
+    .sec .sub { margin-bottom: 1rem; }
+    .rowset { padding: 1rem 0; border-top: 1px solid #F0EBDF; }
+    .rowset:first-child { border-top: 0; padding-top: 0.25rem; }
+    .actions { position: sticky; bottom: 0; padding: 1rem 0;
+      background: linear-gradient(transparent, var(--paper) 40%); }
+  </style>
+
+  <script>
+    document.querySelectorAll<HTMLButtonElement>('[data-add]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.add!;
+        const tpl = document.querySelector<HTMLTemplateElement>(`[data-tpl="${key}"]`);
+        const list = document.querySelector(`[data-rows="${key}"]`);
+        if (!tpl || !list) return;
+        list.appendChild(tpl.content.cloneNode(true));
+        (list.lastElementChild?.querySelector('input, textarea') as HTMLElement | null)?.focus();
+      });
+    });
+  </script>
+</Admin>

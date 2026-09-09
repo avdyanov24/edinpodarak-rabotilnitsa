@@ -1,0 +1,83 @@
+---
+import type { WorkshopEvent } from '../data/events';
+import { fmtDate, fmtTime, availability } from '../lib/format';
+
+interface Props { next?: WorkshopEvent }
+const { next } = Astro.props;
+const a = next ? availability(next.capacity, next.seats_taken, next.registrations_open) : null;
+---
+
+{next && a && (
+  <div class="sticky" data-sticky hidden>
+    <div class="sticky__info">
+      <strong>{next.title}</strong>
+      <span>{fmtDate(next.starts_at)}, {fmtTime(next.starts_at)} ч. · {a.label}</span>
+    </div>
+    {a.full && next.waitlist_enabled ? (
+      <button class="btn btn--ghost sticky__btn" type="button" data-signup={next.id} data-waitlist="1">
+        Чакащи
+      </button>
+    ) : (
+      <button class="btn sticky__btn" type="button" data-signup={next.id}>Запиши се</button>
+    )}
+  </div>
+)}
+
+<style>
+  .sticky {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 850;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem var(--gutter) calc(0.75rem + env(safe-area-inset-bottom));
+    background: color-mix(in oklab, var(--paper) 94%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--rule);
+    transform: translateY(100%);
+    transition: transform 0.5s var(--ease-out);
+  }
+  .sticky[hidden] { display: none; }
+  .sticky.is-up { transform: none; }
+  .sticky__info { display: grid; min-width: 0; line-height: 1.3; }
+  .sticky__info strong { font-family: var(--display); font-size: 1.05rem; font-weight: 500; }
+  .sticky__info span {
+    font-size: 0.75rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sticky__btn { margin-inline-start: auto; flex: none; padding: 0.75em 1.4em; }
+
+  @media (min-width: 861px) { .sticky { display: none; } }
+</style>
+
+<script>
+  const bar = document.querySelector('[data-sticky]') as HTMLElement | null;
+  const events = document.querySelector('#rabotilnitsi');
+  const footer = document.querySelector('.ft');
+
+  if (bar && events) {
+    bar.hidden = false;
+    // Show it once the hero is behind you, hide it again over the footer
+    // (where the same call-to-action is already on screen).
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.target === events) {
+            bar.classList.toggle('is-up', entry.boundingClientRect.top < 0 || entry.isIntersecting);
+          }
+          if (entry.target === footer && entry.isIntersecting) {
+            bar.classList.remove('is-up');
+          }
+        }
+      },
+      { threshold: 0.02 }
+    );
+    io.observe(events);
+    if (footer) io.observe(footer);
+  }
+</script>

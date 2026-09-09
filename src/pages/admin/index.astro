@@ -1,0 +1,122 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { readSession, guard } from '../../lib/auth';
+import { db } from '../../lib/db';
+import { fmtDateFull, fmtTime, fmtPrice, availability } from '../../lib/format';
+
+export const prerender = false;
+
+const denied = guard(Astro.cookies, Astro.redirect);
+if (denied) return denied;
+const session = readSession(Astro.cookies)!;
+
+const events = await db.adminListEvents();
+const regs = await db.adminListRegistrations();
+
+const now = Date.now();
+const upcoming = events.filter((e) => new Date(e.starts_at).getTime() >= now);
+const past = events.filter((e) => new Date(e.starts_at).getTime() < now);
+
+const waitingFor = (id: string) =>
+  regs.filter((r) => r.event_id === id && r.status === 'waitlist').length;
+
+const statusTag = (e: (typeof events)[number]) =>
+  e.status === 'published' ? { cls: 'tag--live', label: 'Публикувана' }
+  : e.status === 'draft' ? { cls: 'tag--draft', label: 'Чернова' }
+  : { cls: 'tag--off', label: 'Отменена' };
+---
+
+<Admin title="Работилници" email={session.email}>
+  <div class="pagehead">
+    <div>
+      <h1>Работилници</h1>
+      <p class="sub">
+        {upcoming.length} предстоящи · {regs.filter((r) => r.status === 'confirmed').length} записани общо
+      </p>
+    </div>
+    <a class="btn" href="/admin/rabotilnitsa/nova">+ Нова работилница</a>
+  </div>
+
+  {events.length === 0 && (
+    <div class="card empty">
+      <h2>Още няма нито една работилница.</h2>
+      <p class="sub">Добави първата и тя ще се появи на сайта.</p>
+      <a class="btn" href="/admin/rabotilnitsa/nova">+ Нова работилница</a>
+    </div>
+  )}
+
+  {upcoming.length > 0 && (
+    <section class="card group">
+      <h2 class="group__title">Предстоящи</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Работилница</th><th>Кога</th><th>Места</th><th>Статус</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {upcoming.map((e) => {
+            const a = availability(e.capacity, e.seats_taken, e.registrations_open);
+            const tag = statusTag(e);
+            const waiting = waitingFor(e.id);
+            return (
+              <tr>
+                <td>
+                  <a class="ev" href={`/admin/rabotilnitsa/${e.id}`}>{e.title}</a>
+                  <span class="ev__meta">{fmtPrice(e.price_cents)} · {e.city}</span>
+                </td>
+                <td>{fmtDateFull(e.starts_at)}<span class="ev__meta">{fmtTime(e.starts_at)} ч.</span></td>
+                <td>
+                  <strong>{e.seats_taken}</strong> / {e.capacity}
+                  <span class={`ev__meta${a.scarce ? ' is-scarce' : ''}`}>{a.label}</span>
+                  {waiting > 0 && <span class="ev__meta">чакащи: {waiting}</span>}
+                </td>
+                <td><span class={`tag ${tag.cls}`}>{tag.label}</span></td>
+                <td class="right">
+                  <a class="btn btn--ghost btn--sm" href={`/admin/zapisvaniya/${e.id}`}>Записани</a>
+                  <a class="btn btn--ghost btn--sm" href={`/admin/rabotilnitsa/${e.id}`}>Промени</a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
+  )}
+
+  {past.length > 0 && (
+    <section class="card group">
+      <h2 class="group__title">Минали</h2>
+      <table>
+        <tbody>
+          {past.map((e) => (
+            <tr>
+              <td><a class="ev" href={`/admin/rabotilnitsa/${e.id}`}>{e.title}</a></td>
+              <td class="muted">{fmtDateFull(e.starts_at)}</td>
+              <td class="muted">{e.seats_taken} / {e.capacity} места</td>
+              <td class="right">
+                <a class="btn btn--ghost btn--sm" href={`/admin/zapisvaniya/${e.id}`}>Записани</a>
+                <a class="btn btn--ghost btn--sm" href={`/admin/rabotilnitsa/nova?ot=${e.id}`}>Повтори</a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  )}
+
+  <style>
+    .group { margin-bottom: 1.5rem; overflow: hidden; }
+    .group__title { font-size: 1.05rem; padding: 1rem 0.75rem 0.5rem; }
+    .ev { font-weight: 600; text-decoration: none; }
+    .ev:hover { color: var(--moss); }
+    .ev__meta { display: block; font-size: 0.78rem; color: var(--muted); }
+    .ev__meta.is-scarce { color: var(--clay); font-weight: 600; }
+    .right { text-align: right; white-space: nowrap; }
+    .right .btn { margin-left: 0.35rem; }
+    .muted { color: var(--muted); }
+    .empty { padding: 3rem 1.5rem; text-align: center; }
+    .empty h2 { font-size: 1.3rem; margin-bottom: 0.35rem; }
+    .empty .btn { margin-top: 1rem; }
+  </style>
+</Admin>

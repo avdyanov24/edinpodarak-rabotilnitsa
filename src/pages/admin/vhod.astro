@@ -1,0 +1,58 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import { signIn, setSession, readSession } from '../../lib/auth';
+import { db } from '../../lib/db';
+
+export const prerender = false;
+
+if (readSession(Astro.cookies)) return Astro.redirect('/admin', 302);
+
+let error = '';
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const email = String(form.get('email') ?? '');
+  const password = String(form.get('password') ?? '');
+  if (await signIn(email, password)) {
+    setSession(Astro.cookies, email);
+    return Astro.redirect('/admin', 302);
+  }
+  error = 'Имейлът или паролата не съвпадат.';
+}
+---
+
+<Admin title="Вход">
+  <div class="login">
+    <h1>Влез в панела</h1>
+    <p class="sub">Оттук добавяш работилници и виждаш кой се е записал.</p>
+
+    {error && <p class="note note--bad">{error}</p>}
+
+    <form method="POST" class="card login__card">
+      <div class="field">
+        <label for="email">Имейл</label>
+        <input id="email" name="email" type="email" required autocomplete="username" autofocus />
+      </div>
+      <div class="field">
+        <label for="password">Парола</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password" />
+      </div>
+      <button class="btn" type="submit">Влез</button>
+    </form>
+
+    {db.kind === 'local' && (
+      <p class="sub login__hint">
+        Без Supabase панелът приема данните от <code>ADMIN_EMAIL</code> и
+        <code>ADMIN_PASSWORD</code> в <code>.env</code>
+        (по подразбиране <code>admin@example.com</code> / <code>rabotilnitsa</code>).
+      </p>
+    )}
+  </div>
+
+  <style>
+    .login { max-width: 26rem; margin: 3rem auto; }
+    .login h1 { font-size: 1.9rem; }
+    .login__card { padding: 1.5rem; margin-top: 1.5rem; }
+    .login__hint { margin-top: 1.25rem; }
+    .login__hint code { background: #F0EBDF; padding: 0.1em 0.35em; border-radius: 3px; }
+  </style>
+</Admin>

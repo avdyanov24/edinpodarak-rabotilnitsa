@@ -1,0 +1,118 @@
+---
+import { testimonials } from '../data/site';
+import type { Testimonial } from '../lib/content';
+
+interface Props { items?: Testimonial[] }
+const { items = testimonials.items } = Astro.props;
+---
+
+<section class="tm section">
+  <div class="wrap">
+    <header class="tm__head">
+      <h2 class="tm__title">{testimonials.title}</h2>
+    </header>
+
+    <ul class="tm__list">
+      {items.map((t, i) => (
+        <li class="tm__item" data-reveal style={`--reveal-delay:${i * 120}ms`}>
+          <figure class="tm__fig">
+            <span class="tm__sprig" aria-hidden="true">
+              <svg viewBox="0 0 40 12" width="40" height="12" fill="none" aria-hidden="true">
+                <circle cx="6" cy="6" r="3.4" fill="currentColor" opacity="0.9" />
+                <circle cx="20" cy="6" r="2.2" fill="currentColor" opacity="0.6" />
+                <circle cx="33" cy="6" r="1.4" fill="currentColor" opacity="0.35" />
+              </svg>
+            </span>
+
+            <blockquote class="tm__quote">
+              <p>„{t.quote}“</p>
+            </blockquote>
+
+            <figcaption class="tm__by">
+              <span class="tm__mark" aria-hidden="true">{t.name.charAt(0)}</span>
+              <span class="tm__who">
+                <span class="tm__name">{t.name}</span>
+                <span class="tm__detail">{t.detail}</span>
+              </span>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .tm { background: var(--paper); }
+  .tm__head { text-align: center; margin-bottom: clamp(2.5rem, 5vw, 3.5rem); }
+  .tm__title { font-size: var(--step-3); }
+
+  .tm__list {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17.5rem), 1fr));
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+  }
+
+  .tm__item { display: grid; }
+  .tm__fig {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    height: 100%;
+    padding: clamp(1.9rem, 3vw, 2.6rem);
+    background: var(--paper-warm);
+    border: 1px solid var(--rule-soft);
+    border-radius: 5px;
+    transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out),
+      border-color 0.4s var(--ease);
+  }
+  .tm__item:hover .tm__fig {
+    transform: translateY(-4px);
+    border-color: color-mix(in oklab, var(--moss) 35%, transparent);
+    box-shadow: 0 18px 34px -24px rgb(18 33 26 / 0.55);
+  }
+
+  /* three moss dots instead of a giant quote glyph sitting in the text */
+  .tm__sprig { color: var(--moss-lt); line-height: 0; }
+
+  .tm__quote { margin: 0; }
+  .tm__quote p {
+    margin: 0;
+    font-family: var(--display);
+    font-size: var(--step-1);
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  .tm__by {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: auto;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .tm__mark {
+    flex: none;
+    width: 2.4rem;
+    height: 2.4rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--moss) 16%, transparent);
+    color: var(--moss);
+    font-family: var(--display);
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+  .tm__who { display: grid; gap: 0.1rem; min-width: 0; }
+  .tm__name { font-weight: 700; font-size: var(--step--1); letter-spacing: 0.03em; }
+  .tm__detail { font-size: var(--step--1); color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tm__item:hover .tm__fig { transform: none; }
+  }
+</style>

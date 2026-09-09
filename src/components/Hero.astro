@@ -1,0 +1,471 @@
+---
+import { u } from '../lib/url';
+import { hero } from '../data/site';
+import { fmtDate, fmtTime, fmtDuration, fmtPrice, availability } from '../lib/format';
+import type { WorkshopEvent } from '../data/events';
+
+interface Props { next?: WorkshopEvent }
+const { next } = Astro.props;
+const avail = next ? availability(next.capacity, next.seats_taken, next.registrations_open) : null;
+
+// Prefer live numbers from the next workshop over the written defaults.
+const facts = next
+  ? [
+      { k: 'Трае', v: fmtDuration(next.duration_minutes) },
+      { k: 'Цена', v: fmtPrice(next.price_cents) },
+      { k: 'Опит', v: 'не е нужен' },
+    ]
+  : hero.facts;
+---
+
+<section class="hero" id="top">
+  <div class="hero__media" data-hero-media>
+    <video
+      class="hero__video"
+      poster={u("/media/hero-gora.jpg")}
+      autoplay muted loop playsinline
+      preload="metadata"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <source src={u("/media/hero-gora.webm")} type="video/webm" />
+      <source src={u("/media/hero-gora.mp4")} type="video/mp4" />
+    </video>
+    <div class="hero__scrim"></div>
+  </div>
+
+  <div class="hero__body wrap">
+    <div class="hero__text">
+      <p class="hero__eyebrow"><span>{hero.eyebrow}</span></p>
+
+      <h1 class="hero__title">
+        <span class="hero__line"><span>{hero.titleLead}</span></span>
+        <span class="hero__line"><span class="hero__alive">{hero.titleAccent}</span></span>
+      </h1>
+
+      <p class="hero__lede">{hero.lede}</p>
+
+      <div class="hero__actions">
+        <a class="btn btn--light" href="#rabotilnitsi">{hero.ctaPrimary}</a>
+        <a class="btn btn--outline-light" href="#kak-protica">{hero.ctaSecondary}</a>
+      </div>
+
+      <dl class="hero__facts">
+        {facts.map((f) => (
+          <div class="hero__fact">
+            <dt>{f.k}</dt>
+            <dd>{f.v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+
+    <!-- one of her pieces, hung over the forest -->
+    <figure class="hero__piece" data-hero-piece aria-hidden="true">
+      <span class="hero__pieceNail"></span>
+      <span class="hero__pieceWire"></span>
+      <span class="hero__pieceFrame">
+        <img src={u(hero.piece.src)} alt="" width="635" height="640" fetchpriority="low" decoding="async" />
+      </span>
+      <figcaption class="hero__pieceCap">{hero.piece.caption}</figcaption>
+    </figure>
+  </div>
+
+  {next && avail && (
+    <a class="ticker" href={`#${next.slug}`}>
+      <span class="ticker__label">Следваща работилница</span>
+      <span class="ticker__sep" aria-hidden="true"></span>
+      <span class="ticker__main">
+        <strong>{next.title}</strong>
+        <span>{fmtDate(next.starts_at)}, {fmtTime(next.starts_at)} ч. · {next.city}</span>
+      </span>
+      <span class={`ticker__seats${avail.scarce ? ' is-scarce' : ''}${avail.full ? ' is-full' : ''}`}>
+        {avail.label}
+      </span>
+      <span class="ticker__arrow" aria-hidden="true">↓</span>
+    </a>
+  )}
+
+  <span class="hero__cue" aria-hidden="true">
+    <span class="hero__cueText">{hero.scroll}</span>
+    <span class="hero__cueLine"></span>
+  </span>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    align-items: end;
+    isolation: isolate;
+    background: var(--forest-dp);
+    color: var(--cream);
+    overflow: hidden;
+  }
+
+  .hero__media { position: absolute; inset: -8% 0 0; z-index: -1; will-change: transform; }
+  .hero__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: saturate(0.92) contrast(1.05);
+  }
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to right, rgb(9 20 14 / 0.9) 0%, rgb(9 20 14 / 0.66) 38%, rgb(9 20 14 / 0.18) 78%),
+      linear-gradient(to top, rgb(9 20 14 / 0.92) 0%, rgb(9 20 14 / 0.6) 40%, rgb(9 20 14 / 0.34) 72%, rgb(9 20 14 / 0.7) 100%),
+      radial-gradient(120% 80% at 50% 45%, transparent 30%, rgb(9 20 14 / 0.55) 100%);
+  }
+
+  .hero__body {
+    padding-block: 8rem 2.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    align-items: center;
+    gap: clamp(2rem, 4vw, 4rem);
+    width: min(100% - var(--gutter) * 2, 82rem);
+  }
+  .hero__text { display: grid; justify-items: start; }
+
+  /* masthead rule + label */
+  .hero__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    align-self: stretch;
+    font-size: var(--step--1);
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #C6DCAE;
+    margin: 0 0 1.6rem;
+    opacity: 0;
+    animation: riseIn 1s var(--ease-out) 0.15s forwards;
+  }
+  .hero__eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, currentColor, transparent);
+    opacity: 0.45;
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: ruleIn 1.4s var(--ease-out) 0.5s forwards;
+  }
+
+  .hero__title {
+    font-size: var(--step-5);
+    line-height: 0.94;
+    letter-spacing: -0.03em;
+    margin: 0 0 1.6rem;
+    max-width: 12ch;
+  }
+  .hero__line { display: block; overflow: hidden; padding-block: 0.06em; }
+  .hero__line > span {
+    display: block;
+    transform: translateY(105%);
+    animation: maskUp 1.15s var(--ease-out) forwards;
+  }
+  .hero__line:nth-child(1) > span { animation-delay: 0.28s; }
+  .hero__line:nth-child(2) > span { animation-delay: 0.42s; }
+
+  /* The word "живо" is filled with a photograph of real moss. */
+  .hero__alive {
+    background-image:
+      linear-gradient(rgb(214 236 190 / 0.42), rgb(214 236 190 / 0.42)),
+      url('/media/texture/muh-edro.webp');
+    background-size: 118% auto;
+    background-position: 50% 58%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: saturate(1.25) contrast(1.12) brightness(1.18);
+    padding-inline-end: 0.08em;
+  }
+  @supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+    .hero__alive { color: var(--lichen); -webkit-text-fill-color: currentColor; }
+  }
+
+  .hero__lede {
+    font-size: var(--step-1);
+    line-height: 1.55;
+    max-width: 42ch;
+    color: color-mix(in oklab, var(--cream) 88%, transparent);
+    margin: 0 0 2rem;
+    opacity: 0;
+    animation: riseIn 0.9s var(--ease-out) 0.66s forwards;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    opacity: 0;
+    animation: riseIn 0.9s var(--ease-out) 0.66s forwards;
+  }
+
+  /* the three things everyone asks before booking */
+  .hero__facts {
+    display: flex;
+    margin: 2.2rem 0 0;
+    opacity: 0;
+    animation: riseIn 0.9s var(--ease-out) 0.66s forwards;
+  }
+  .hero__fact {
+    padding-inline: clamp(1rem, 2vw, 1.8rem);
+    border-left: 1px solid color-mix(in oklab, var(--cream) 22%, transparent);
+  }
+  .hero__fact:first-child { padding-inline-start: 0; border-left: 0; }
+  .hero__fact dt {
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+    color: var(--lichen);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .hero__fact dd {
+    margin: 0;
+    font-family: var(--display);
+    font-size: var(--step-1);
+    line-height: 1;
+  }
+
+  /* --- the hung piece --- */
+  .hero__piece {
+    position: relative;
+    justify-self: center;
+    width: min(100%, 22rem);
+    margin: 0;
+    padding-top: 3rem;
+    opacity: 0;
+    animation: pieceIn 1.4s var(--ease-out) 0.95s forwards;
+    transform-origin: 50% 0;
+  }
+  .hero__pieceNail {
+    position: absolute;
+    top: 0; left: 50%;
+    width: 9px; height: 9px;
+    margin-left: -4.5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #e6d3a0, var(--brass) 62%, #6f5b2c);
+    box-shadow: 0 2px 5px rgb(0 0 0 / 0.5);
+    z-index: 2;
+  }
+  .hero__pieceWire {
+    position: absolute;
+    top: 4px; left: 50%;
+    width: 30%; height: 3rem;
+    transform: translateX(-50%);
+    border: 1px solid rgb(244 238 226 / 0.35);
+    border-bottom: 0;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  }
+  .hero__pieceFrame {
+    display: block;
+    padding: clamp(0.55rem, 1.1vw, 0.9rem);
+    background: linear-gradient(150deg, #f9f5ec, #e8dfcd 52%, #f5efe2);
+    border: 1px solid rgb(18 33 26 / 0.35);
+    border-radius: 2px;
+    box-shadow: 0 30px 60px -26px rgb(0 0 0 / 0.8), 0 4px 10px rgb(0 0 0 / 0.35);
+    transform-origin: 50% -18%;
+    animation: sway 9s ease-in-out 2.2s infinite;
+  }
+  .hero__pieceFrame img {
+    width: 100%;
+    aspect-ratio: 635 / 640;
+    object-fit: cover;
+    display: block;
+  }
+  .hero__pieceCap {
+    margin-top: 0.9rem;
+    text-align: center;
+    font-family: var(--display);
+    font-style: italic;
+    font-size: var(--step--1);
+    color: color-mix(in oklab, var(--cream) 72%, transparent);
+  }
+
+  /* --- next-event ticker --- */
+  .ticker {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.9rem, 2vw, 1.8rem);
+    padding: 1.1rem var(--gutter);
+    background: color-mix(in oklab, var(--cream) 12%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid color-mix(in oklab, var(--cream) 20%, transparent);
+    text-decoration: none;
+    font-size: var(--step--1);
+    opacity: 0;
+    animation: riseIn 0.9s var(--ease-out) 0.9s forwards;
+    transition: background-color 0.4s var(--ease);
+  }
+  .ticker:hover { background: color-mix(in oklab, var(--cream) 20%, transparent); }
+  .ticker__label {
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--lichen);
+    flex: none;
+  }
+  .ticker__sep { width: 1px; height: 1.6rem; background: color-mix(in oklab, var(--cream) 25%, transparent); flex: none; }
+  .ticker__main { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; min-width: 0; }
+  .ticker__main strong { font-family: var(--display); font-size: 1.15rem; font-weight: 500; }
+  .ticker__main span { color: color-mix(in oklab, var(--cream) 78%, transparent); }
+  .ticker__seats {
+    margin-inline-start: auto;
+    padding: 0.35em 0.9em;
+    border-radius: 100px;
+    border: 1px solid color-mix(in oklab, var(--cream) 30%, transparent);
+    white-space: nowrap;
+    flex: none;
+  }
+  .ticker__seats.is-scarce { border-color: var(--clay); background: color-mix(in oklab, var(--clay) 26%, transparent); }
+  .ticker__seats.is-full { opacity: 0.6; }
+  .ticker__arrow { flex: none; transition: transform 0.4s var(--ease-out); }
+  .ticker:hover .ticker__arrow { transform: translateY(3px); }
+
+  /* --- scroll cue --- */
+  .hero__cue {
+    position: absolute;
+    right: calc(var(--gutter) * 0.5);
+    bottom: 7.5rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.8rem;
+    opacity: 0;
+    animation: riseIn 0.9s var(--ease-out) 1s forwards;
+  }
+  .hero__cueText {
+    writing-mode: vertical-rl;
+    font-size: 0.66rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--cream) 70%, transparent);
+  }
+  .hero__cueLine {
+    width: 1px; height: 3.5rem;
+    background: linear-gradient(var(--lichen), transparent);
+    animation: cueSlide 2.6s var(--ease) infinite;
+    transform-origin: top;
+  }
+
+  @keyframes maskUp { to { transform: none; } }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  @keyframes ruleIn { to { transform: scaleX(1); } }
+  @keyframes pieceIn {
+    from { opacity: 0; transform: translateY(-26px) rotate(-3deg); }
+    to   { opacity: 1; transform: none; }
+  }
+  /* barely perceptible — a frame on a wire is never perfectly still */
+  @keyframes sway {
+    0%, 100% { transform: rotate(-0.55deg); }
+    50%      { transform: rotate(0.55deg); }
+  }
+  @keyframes cueSlide {
+    0%   { transform: scaleY(0); opacity: 0; }
+    35%  { transform: scaleY(1); opacity: 1; }
+    100% { transform: scaleY(1) translateY(3.5rem); opacity: 0; }
+  }
+
+  @media (max-width: 1080px) {
+    .hero__piece { width: min(100%, 17rem); }
+    .hero__body { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); }
+  }
+  @media (max-width: 860px) {
+    .hero__body { grid-template-columns: 1fr; }
+    .hero__piece { display: none; }
+    .hero__cue { display: none; }
+    .ticker { flex-wrap: wrap; gap: 0.6rem 1rem; }
+    .ticker__sep { display: none; }
+    .ticker__seats { margin-inline-start: 0; }
+    .ticker__arrow { margin-inline-start: auto; }
+  }
+  @media (max-width: 560px) {
+    .hero__body { padding-block: 7rem 2rem; }
+    .hero__title { max-width: 100%; }
+    .hero__facts { flex-wrap: wrap; gap: 0.9rem 0; }
+  }
+
+  /* One frame with every animation switched off. Removing the class again
+     restarts them from the top — including the ones on pseudo-elements,
+     which a per-element animation reset cannot reach. */
+  .hero.is-resetting *,
+  .hero.is-resetting *::before,
+  .hero.is-resetting *::after {
+    animation: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__eyebrow, .hero__lede, .hero__actions, .hero__facts, .ticker, .hero__cue, .hero__piece {
+      opacity: 1; animation: none;
+    }
+    .hero__line > span { transform: none; animation: none; }
+    .hero__eyebrow::after { transform: scaleX(1); animation: none; }
+    .hero__pieceFrame { animation: none; }
+    .hero__cueLine { animation: none; }
+  }
+</style>
+
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const media = document.querySelector('[data-hero-media]') as HTMLElement | null;
+  const piece = document.querySelector('[data-hero-piece]') as HTMLElement | null;
+  const video = document.querySelector('.hero__video') as HTMLVideoElement | null;
+
+  // The forest drifts slowly, the hung piece drifts the other way — the hero
+  // gains depth without anything moving fast enough to notice.
+  if ((media || piece) && !reduce.matches) {
+    let ticking = false;
+    const update = () => {
+      const y = Math.min(window.scrollY, window.innerHeight);
+      if (media) media.style.transform = `translate3d(0, ${y * 0.22}px, 0)`;
+      if (piece) piece.style.transform = `translate3d(0, ${y * -0.07}px, 0)`;
+      ticking = false;
+    };
+    window.addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+  }
+
+  // Replay the entrance when the hero comes back into view, so the animation
+  // is not a one-shot you have to reload the page to see again.
+  const hero = document.querySelector('.hero') as HTMLElement | null;
+  if (hero && !reduce.matches) {
+    let wasOut = false;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio === 0) {
+          wasOut = true;
+        } else if (wasOut && entry.intersectionRatio > 0.15) {
+          wasOut = false;
+          hero.classList.add('is-resetting');
+          void hero.offsetWidth; // flush the reset before re-arming
+          hero.classList.remove('is-resetting');
+        }
+      },
+      { threshold: [0, 0.15] }
+    );
+    io.observe(hero);
+  }
+
+  // Don't burn battery decoding video that nobody can see.
+  if (video) {
+    if (reduce.matches) { video.pause(); }
+    else {
+      const io = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) video.play().catch(() => {});
+        else video.pause();
+      }, { threshold: 0.01 });
+      io.observe(video);
+    }
+  }
+</script>

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# The admin panel and the cancellation links hold personal data.
+Disallow: /admin
+Disallow: /otkazhi
+Disallow: /api
+
+Sitemap: https://rabotilnitsa.edinpodarak.com/sitemap.xml

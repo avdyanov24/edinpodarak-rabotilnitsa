@@ -1,0 +1,33 @@
+---
+interface Props { capacity: number; taken: number; label: string }
+const { capacity, taken, label } = Astro.props;
+const showDots = capacity <= 18;
+const dots = showDots ? Array.from({ length: capacity }, (_, i) => i < taken) : [];
+---
+
+<p class="seats" title={label}>
+  {showDots && (
+    <span class="seats__dots" aria-hidden="true">
+      {dots.map((filled, i) => (
+        <i class={filled ? 'is-taken' : ''} style={`--i:${i}`}></i>
+      ))}
+    </span>
+  )}
+  <span class="seats__label">{label}</span>
+</p>
+
+<style>
+  .seats { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin: 0; font-size: var(--step--1); }
+  .seats__dots { display: flex; gap: 4px; }
+  /* A filled dot is a taken stool at the table. */
+  .seats__dots i {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--moss);
+    background: transparent;
+    transition: background-color 0.4s var(--ease), transform 0.4s var(--ease-out);
+    transition-delay: calc(var(--i) * 22ms);
+  }
+  .seats__dots i.is-taken { background: var(--moss); }
+  .seats__label { color: var(--muted); font-weight: 500; }
+</style>

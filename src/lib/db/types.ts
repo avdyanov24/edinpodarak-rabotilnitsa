@@ -1,0 +1,97 @@
+/** Mirrors the `events` table plus the seat count the RPC adds. */
+export interface WorkshopEvent {
+  id: string;
+  slug: string;
+  status: 'draft' | 'published' | 'cancelled';
+  registrations_open: boolean;
+  title: string;
+  summary: string;
+  description: string;
+  cover_image: string | null;
+  gallery: string[];
+  starts_at: string;
+  duration_minutes: number;
+  venue_name: string;
+  venue_address: string;
+  venue_map_url: string | null;
+  city: string;
+  price_cents: number;
+  currency: string;
+  price_note: string;
+  capacity: number;
+  seats_taken: number;
+  min_age: number | null;
+  includes: string[];
+  bring_note: string | null;
+  host_note: string | null;
+  waitlist_enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type RegistrationStatus = 'confirmed' | 'waitlist' | 'cancelled' | 'attended';
+
+export interface Registration {
+  id: string;
+  event_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  people_count: number;
+  note: string | null;
+  status: RegistrationStatus;
+  consent_at: string;
+  cancel_token: string;
+  created_at: string;
+}
+
+export interface RegisterInput {
+  event_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  people_count: number;
+  note?: string | null;
+}
+
+export interface RegisterResult {
+  status: 'confirmed' | 'waitlist' | 'full';
+  cancel_token: string | null;
+  seats_left: number;
+}
+
+export interface CancelResult {
+  status: 'cancelled' | 'already_cancelled';
+  event_title: string;
+  starts_at: string;
+  promoted: number;
+}
+
+/** Both backends implement exactly this. */
+export interface Db {
+  readonly kind: 'supabase' | 'local';
+
+  listPublishedEvents(): Promise<WorkshopEvent[]>;
+  register(input: RegisterInput): Promise<RegisterResult>;
+  cancelByToken(token: string): Promise<CancelResult>;
+
+  adminListEvents(): Promise<WorkshopEvent[]>;
+  adminGetEvent(id: string): Promise<WorkshopEvent | null>;
+  adminSaveEvent(event: Partial<WorkshopEvent> & { id?: string }): Promise<WorkshopEvent>;
+  adminDeleteEvent(id: string): Promise<void>;
+
+  adminListRegistrations(eventId?: string): Promise<Registration[]>;
+  adminSetRegistrationStatus(id: string, status: RegistrationStatus): Promise<void>;
+
+  getSiteContent(): Promise<Record<string, unknown>>;
+  saveSiteContent(data: Record<string, unknown>): Promise<void>;
+
+  uploadImage(file: File): Promise<string>;
+}
+
+/** Errors the booking RPC raises, mapped to something the UI can show. */
+export class DbError extends Error {
+  constructor(public code: string, message?: string) {
+    super(message ?? code);
+  }
+}

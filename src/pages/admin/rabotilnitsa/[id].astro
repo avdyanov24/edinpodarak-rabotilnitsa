@@ -1,0 +1,325 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { readSession, guard } from '../../../lib/auth';
+import { db, DbError, type WorkshopEvent } from '../../../lib/db';
+import { isoToLocalInput, localInputToIso, slugify } from '../../../lib/format';
+
+export const prerender = false;
+
+const denied = guard(Astro.cookies, Astro.redirect);
+if (denied) return denied;
+const session = readSession(Astro.cookies)!;
+
+const { id } = Astro.params;
+const isNew = id === 'nova';
+
+/** A brand-new workshop starts as a draft with sensible defaults. */
+function blank(): Partial<WorkshopEvent> {
+  const start = new Date();
+  start.setDate(start.getDate() + 21);
+  start.setHours(19, 0, 0, 0);
+  return {
+    slug: '', status: 'draft', registrations_open: true,
+    title: '', summary: '', description: '', cover_image: null, gallery: [],
+    starts_at: start.toISOString(), duration_minutes: 120,
+    venue_name: 'Ателие „Джейля“', venue_address: '', venue_map_url: null, city: 'Пловдив',
+    price_cents: 3100, currency: 'EUR', price_note: 'Всички материали са включени.',
+    capacity: 12, seats_taken: 0, min_age: 18,
+    includes: [], bring_note: null, host_note: 'Води Джейля', waitlist_enabled: true,
+  };
+}
+
+let event: Partial<WorkshopEvent>;
+let error = '';
+let saved = Astro.url.searchParams.get('zapazeno') === '1';
+
+if (isNew) {
+  const copyFrom = Astro.url.searchParams.get('ot');
+  if (copyFrom) {
+    const source = await db.adminGetEvent(copyFrom);
+    if (source) {
+      // "Повтори": same workshop, new date, back to draft
+      const next = new Date(source.starts_at);
+      next.setMonth(next.getMonth() + 1);
+      event = { ...source, id: undefined, slug: '', status: 'draft', seats_taken: 0, starts_at: next.toISOString() };
+    } else event = blank();
+  } else event = blank();
+} else {
+  const found = await db.adminGetEvent(id!);
+  if (!found) return Astro.redirect('/admin', 302);
+  event = found;
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? 'save');
+
+  if (action === 'delete' && !isNew) {
+    await db.adminDeleteEvent(id!);
+    return Astro.redirect('/admin', 302);
+  }
+
+  const title = String(form.get('title') ?? '').trim();
+  const priceEuro = Number(String(form.get('price') ?? '0').replace(',', '.'));
+  const payload: Partial<WorkshopEvent> & { id?: string } = {
+    ...(isNew ? {} : { id: id! }),
+    title,
+    slug: (String(form.get('slug') ?? '').trim() || slugify(title)),
+    status: String(form.get('status') ?? 'draft') as WorkshopEvent['status'],
+    registrations_open: form.get('registrations_open') === 'on',
+    summary: String(form.get('summary') ?? '').trim(),
+    description: String(form.get('description') ?? '').trim(),
+    cover_image: String(form.get('cover_image') ?? '').trim() || null,
+    starts_at: localInputToIso(String(form.get('starts_at') ?? '')),
+    duration_minutes: Math.max(15, Number(form.get('duration_minutes') ?? 120)),
+    venue_name: String(form.get('venue_name') ?? '').trim(),
+    venue_address: String(form.get('venue_address') ?? '').trim(),
+    venue_map_url: String(form.get('venue_map_url') ?? '').trim() || null,
+    city: String(form.get('city') ?? '').trim(),
+    price_cents: Math.max(0, Math.round(priceEuro * 100)),
+    currency: 'EUR',
+    price_note: String(form.get('price_note') ?? '').trim(),
+    capacity: Math.max(1, Number(form.get('capacity') ?? 12)),
+    min_age: form.get('min_age') ? Number(form.get('min_age')) : null,
+    includes: String(form.get('includes') ?? '').split('\n').map((s) => s.trim()).filter(Boolean),
+    bring_note: String(form.get('bring_note') ?? '').trim() || null,
+    host_note: String(form.get('host_note') ?? '').trim() || null,
+    waitlist_enabled: form.get('waitlist_enabled') === 'on',
+  };
+
+  if (!payload.title) error = 'Работилницата има нужда от заглавие.';
+  else if (!form.get('starts_at')) error = 'Избери дата и час.';
+  else {
+    try {
+      const result = await db.adminSaveEvent(payload);
+      return Astro.redirect(`/admin/rabotilnitsa/${result.id}?zapazeno=1`, 302);
+    } catch (e) {
+      error = e instanceof DbError && e.code === 'duplicate_slug'
+        ? 'Вече има работилница с този адрес (slug). Дай ѝ друг.'
+        : 'Не можах да запазя. Опитай пак.';
+      event = { ...event, ...payload };
+    }
+  }
+}
+
+const startsLocal = isoToLocalInput(event.starts_at ?? new Date().toISOString());
+---
+
+<Admin title={isNew ? 'Нова работилница' : String(event.title)} email={session.email}>
+  <div class="pagehead">
+    <div>
+      <h1>{isNew ? 'Нова работилница' : 'Промени работилницата'}</h1>
+      <p class="sub">
+        {isNew
+          ? 'Запази я като чернова и я публикувай, когато си готова.'
+          : `${event.seats_taken ?? 0} от ${event.capacity} места са заети.`}
+      </p>
+    </div>
+    <a class="btn btn--ghost" href="/admin">← Всички работилници</a>
+  </div>
+
+  {saved && <p class="note note--ok">Запазено.</p>}
+  {error && <p class="note note--bad">{error}</p>}
+
+  <form method="POST" class="grid">
+    <div class="card sec">
+      <h2 class="sec__title">Основното</h2>
+
+      <div class="field">
+        <label for="title">Заглавие</label>
+        <input id="title" name="title" type="text" value={event.title} required
+               placeholder="Мъх и вино" />
+      </div>
+
+      <div class="field">
+        <label for="summary">Кратко описание</label>
+        <textarea id="summary" name="summary" rows="2"
+                  placeholder="Едно изречение, което се показва на картичката.">{event.summary}</textarea>
+      </div>
+
+      <div class="field">
+        <label for="description">Пълно описание</label>
+        <textarea id="description" name="description" rows="6"
+                  placeholder="Разкажи какво ще се случи.">{event.description}</textarea>
+      </div>
+
+      <div class="field">
+        <span class="field__label">Снимка на корицата</span>
+        <div class="cover">
+          {event.cover_image && <img class="cover__img" src={event.cover_image} alt="" />}
+          <div class="cover__side">
+            <input id="cover_image" name="cover_image" type="text" value={event.cover_image ?? ''}
+                   placeholder="/media/gallery/…" data-cover-input />
+            <input type="file" accept="image/*" data-cover-file />
+            <span class="field__hint" data-cover-status>Избери файл и той се качва сам.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card sec">
+      <h2 class="sec__title">Кога и къде</h2>
+      <div class="row">
+        <div class="field">
+          <label for="starts_at">Дата и начален час</label>
+          <input id="starts_at" name="starts_at" type="datetime-local" value={startsLocal} required />
+          <span class="field__hint">Часът е български.</span>
+        </div>
+        <div class="field">
+          <label for="duration_minutes">Продължителност (минути)</label>
+          <input id="duration_minutes" name="duration_minutes" type="number" min="15" step="15"
+                 value={event.duration_minutes} />
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="venue_name">Място</label>
+          <input id="venue_name" name="venue_name" type="text" value={event.venue_name} />
+        </div>
+        <div class="field">
+          <label for="city">Град</label>
+          <input id="city" name="city" type="text" value={event.city} />
+        </div>
+      </div>
+      <div class="field">
+        <label for="venue_address">Адрес</label>
+        <input id="venue_address" name="venue_address" type="text" value={event.venue_address}
+               placeholder="ул. „…“ 12" />
+      </div>
+      <div class="field">
+        <label for="venue_map_url">Връзка към картата</label>
+        <input id="venue_map_url" name="venue_map_url" type="url" value={event.venue_map_url ?? ''}
+               placeholder="https://maps.google.com/…" />
+      </div>
+    </div>
+
+    <div class="card sec">
+      <h2 class="sec__title">Места и цена</h2>
+      <div class="row">
+        <div class="field">
+          <label for="price">Цена в евро</label>
+          <input id="price" name="price" type="number" min="0" step="0.5"
+                 value={((event.price_cents ?? 0) / 100).toString()} />
+        </div>
+        <div class="field">
+          <label for="capacity">Брой места</label>
+          <input id="capacity" name="capacity" type="number" min="1" value={event.capacity} />
+          {!isNew && (event.seats_taken ?? 0) > 0 && (
+            <span class="field__hint">Заети са {event.seats_taken}. Не слагай по-малко от това.</span>
+          )}
+        </div>
+        <div class="field">
+          <label for="min_age">Възраст от</label>
+          <input id="min_age" name="min_age" type="number" min="0" max="120" value={event.min_age ?? ''}
+                 placeholder="18" />
+          <span class="field__hint">Празно = без ограничение.</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="price_note">Какво влиза в цената (едно изречение)</label>
+        <input id="price_note" name="price_note" type="text" value={event.price_note} />
+      </div>
+      <div class="field">
+        <label for="includes">Какво е включено (по едно на ред)</label>
+        <textarea id="includes" name="includes" rows="5"
+                  placeholder={'Рамка формат А4\nСкандинавски мъх в четири цвята'}>{(event.includes ?? []).join('\n')}</textarea>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="bring_note">Какво да носят</label>
+          <input id="bring_note" name="bring_note" type="text" value={event.bring_note ?? ''} />
+        </div>
+        <div class="field">
+          <label for="host_note">Кой води</label>
+          <input id="host_note" name="host_note" type="text" value={event.host_note ?? ''} />
+        </div>
+      </div>
+    </div>
+
+    <div class="card sec">
+      <h2 class="sec__title">Показване на сайта</h2>
+      <div class="field">
+        <label for="status">Статус</label>
+        <select id="status" name="status">
+          <option value="draft" selected={event.status === 'draft'}>Чернова — не се вижда</option>
+          <option value="published" selected={event.status === 'published'}>Публикувана — вижда се на сайта</option>
+          <option value="cancelled" selected={event.status === 'cancelled'}>Отменена</option>
+        </select>
+      </div>
+      <label class="check">
+        <input type="checkbox" name="registrations_open" checked={event.registrations_open} />
+        <span>Записването е отворено</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" name="waitlist_enabled" checked={event.waitlist_enabled} />
+        <span>Приемай чакащи, когато местата свършат</span>
+      </label>
+      <div class="field">
+        <label for="slug">Адрес на страницата</label>
+        <input id="slug" name="slug" type="text" value={event.slug} placeholder="само с латиница" />
+        <span class="field__hint">Празно = ще го направя от заглавието.</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit" name="action" value="save">Запази</button>
+      {!isNew && (
+        <>
+          <a class="btn btn--ghost" href={`/admin/zapisvaniya/${id}`}>Виж записаните</a>
+          <a class="btn btn--ghost" href={`/admin/rabotilnitsa/nova?ot=${id}`}>Повтори на друга дата</a>
+          {event.status === 'published' && (
+            <a class="btn btn--ghost" href={`/rabotilnitsa/${event.slug}`} target="_blank" rel="noopener">Виж на сайта ↗</a>
+          )}
+          <button class="btn btn--danger" type="submit" name="action" value="delete"
+                  data-confirm="Наистина ли да изтрия работилницата и всички записвания за нея?">
+            Изтрий
+          </button>
+        </>
+      )}
+    </div>
+  </form>
+
+  <style>
+    .grid { display: grid; gap: 1.25rem; }
+    .sec { padding: 1.25rem; }
+    .sec__title { font-size: 1.05rem; margin-bottom: 1rem; }
+    .actions { display: flex; gap: 0.6rem; flex-wrap: wrap; position: sticky; bottom: 0;
+      background: linear-gradient(transparent, var(--paper) 40%); padding: 1rem 0; }
+    .actions .btn--danger { margin-left: auto; }
+    .cover { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; align-items: start; }
+    .cover__img { width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 5px; border: 1px solid var(--line); }
+    .cover__side { display: grid; gap: 0.5rem; }
+    @media (max-width: 620px) { .cover { grid-template-columns: 1fr; } }
+  </style>
+
+  <script>
+    // Delete needs a deliberate answer, not a stray click.
+    document.querySelectorAll<HTMLButtonElement>('[data-confirm]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        if (!window.confirm(btn.dataset.confirm!)) e.preventDefault();
+      });
+    });
+
+    // Picking a file uploads it and drops the URL into the text field.
+    const file = document.querySelector<HTMLInputElement>('[data-cover-file]');
+    const input = document.querySelector<HTMLInputElement>('[data-cover-input]');
+    const status = document.querySelector<HTMLElement>('[data-cover-status]');
+
+    file?.addEventListener('change', async () => {
+      const f = file.files?.[0];
+      if (!f || !input || !status) return;
+      status.textContent = 'Качвам…';
+      const body = new FormData();
+      body.append('file', f);
+      try {
+        const res = await fetch('/api/admin/upload', { method: 'POST', body });
+        const out = await res.json();
+        if (!res.ok) throw new Error(out.error ?? 'upload_failed');
+        input.value = out.url;
+        status.textContent = 'Готово. Натисни „Запази“.';
+      } catch {
+        status.textContent = 'Качването не стана. Пробвай пак или сложи адрес на ръка.';
+      }
+    });
+  </script>
+</Admin>

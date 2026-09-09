@@ -1,0 +1,121 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import Manifesto from '../components/Manifesto.astro';
+import Events from '../components/Events.astro';
+import Process from '../components/Process.astro';
+import Included from '../components/Included.astro';
+import Gallery from '../components/Gallery.astro';
+import Testimonials from '../components/Testimonials.astro';
+import PrivateEvents from '../components/PrivateEvents.astro';
+import Faq from '../components/Faq.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import SignupDialog from '../components/SignupDialog.astro';
+import StickyBar from '../components/StickyBar.astro';
+
+import { getUpcomingEvents, getNextEvent } from '../lib/events';
+import { getContent } from '../lib/content';
+import { brand, faq } from '../data/site';
+import { endsAt, isoDuration } from '../lib/format';
+import { root, u } from '../lib/url';
+
+/**
+ * Rendered on demand. The workshops come from the database, so building this
+ * page ahead of time would leave the site stale until the next deploy —
+ * she publishes a date and expects to see it. The cache header keeps it
+ * cheap without making it stale for long.
+ */
+export const prerender = false;
+if (!import.meta.env.PUBLIC_PAGES) {
+  Astro.response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=600');
+}
+
+const events = await getUpcomingEvents();
+const content = await getContent();
+const next = await getNextEvent();
+
+const site = root(Astro.site);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: `Работилница · ${brand.owner}`,
+    url: site,
+    logo: `${site}/media/logo-djeilya.png`,
+    email: brand.email,
+    telephone: brand.phone,
+    sameAs: [brand.instagram, brand.facebook, brand.shopUrl],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: events.map((e, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Event',
+        name: e.title,
+        description: e.summary,
+        url: `${site}/rabotilnitsa/${e.slug}`,
+        image: `${site}${e.cover_image}`,
+        startDate: e.starts_at,
+        endDate: endsAt(e.starts_at, e.duration_minutes),
+        duration: isoDuration(e.duration_minutes),
+        eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        location: {
+          '@type': 'Place',
+          name: e.venue_name,
+          address: { '@type': 'PostalAddress', streetAddress: e.venue_address, addressLocality: e.city, addressCountry: 'BG' },
+        },
+        organizer: { '@type': 'Organization', name: brand.owner, url: site },
+        offers: {
+          '@type': 'Offer',
+          price: (e.price_cents / 100).toFixed(2),
+          priceCurrency: 'EUR',
+          availability: e.seats_taken >= e.capacity
+            ? 'https://schema.org/SoldOut'
+            : 'https://schema.org/InStock',
+          url: `${site}/rabotilnitsa/${e.slug}`,
+          validFrom: new Date().toISOString(),
+        },
+      },
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: content.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  },
+];
+---
+
+<Base
+  title="Работилница със скандинавски мъх в Пловдив · Джейля"
+  description="Два часа, една рамка и шепа скандинавски мъх. Направи си своя картина — всички материали и чаша вино са включени. Виж свободните дати и се запиши онлайн."
+  jsonLd={jsonLd}
+>
+  <Header overlay />
+  <main id="main">
+    <Hero next={next} />
+    <Manifesto />
+    <Events events={events} />
+    <Process />
+    <Included />
+    <Gallery />
+    <Testimonials items={content.testimonials} />
+    <PrivateEvents />
+    <Faq items={content.faq} />
+    <Contact />
+  </main>
+  <Footer />
+  <SignupDialog events={events} />
+  <StickyBar next={next} />
+</Base>

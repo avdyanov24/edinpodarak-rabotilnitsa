@@ -1,0 +1,149 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import { readSession, guard } from '../../../lib/auth';
+import { db, type RegistrationStatus } from '../../../lib/db';
+import { fmtDateFull, fmtTime, availability } from '../../../lib/format';
+
+export const prerender = false;
+
+const denied = guard(Astro.cookies, Astro.redirect);
+if (denied) return denied;
+const session = readSession(Astro.cookies)!;
+
+const { id } = Astro.params;
+const event = await db.adminGetEvent(id!);
+if (!event) return Astro.redirect('/admin', 302);
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const regId = String(form.get('reg_id') ?? '');
+  const status = String(form.get('status') ?? '') as RegistrationStatus;
+  if (regId && ['confirmed', 'waitlist', 'cancelled', 'attended'].includes(status)) {
+    await db.adminSetRegistrationStatus(regId, status);
+  }
+  return Astro.redirect(`/admin/zapisvaniya/${id}`, 302);
+}
+
+const rows = await db.adminListRegistrations(id!);
+
+// The list she takes to the venue.
+if (Astro.url.searchParams.get('csv') === '1') {
+  const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const head = ['Име', 'Телефон', 'Имейл', 'Места', 'Статус', 'Бележка', 'Записан на'];
+  const label: Record<string, string> = {
+    confirmed: 'Потвърдено', waitlist: 'Чакащ', cancelled: 'Отказано', attended: 'Присъствал',
+  };
+  const body = rows.map((r) => [
+    r.full_name, r.phone, r.email, r.people_count,
+    label[r.status] ?? r.status, r.note ?? '',
+    new Date(r.created_at).toLocaleString('bg-BG', { timeZone: 'Europe/Sofia' }),
+  ].map(esc).join(','));
+
+  // BOM so Excel opens the Cyrillic correctly
+  return new Response('﻿' + [head.map(esc).join(','), ...body].join('\r\n'), {
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="zapisvaniya-${event.slug}.csv"`,
+    },
+  });
+}
+
+const a = availability(event.capacity, event.seats_taken, event.registrations_open);
+const groups = {
+  confirmed: rows.filter((r) => r.status === 'confirmed'),
+  waitlist: rows.filter((r) => r.status === 'waitlist'),
+  attended: rows.filter((r) => r.status === 'attended'),
+  cancelled: rows.filter((r) => r.status === 'cancelled'),
+};
+const sections: { key: keyof typeof groups; title: string; hint: string }[] = [
+  { key: 'confirmed', title: 'Записани', hint: 'Тези хора ги очакваш.' },
+  { key: 'waitlist', title: 'Чакащи', hint: 'Ако някой се откаже, мястото отива при първия.' },
+  { key: 'attended', title: 'Присъствали', hint: '' },
+  { key: 'cancelled', title: 'Отказали се', hint: '' },
+];
+---
+
+<Admin title={`Записани · ${event.title}`} email={session.email}>
+  <div class="pagehead">
+    <div>
+      <h1>{event.title}</h1>
+      <p class="sub">
+        {fmtDateFull(event.starts_at)}, {fmtTime(event.starts_at)} ч. ·
+        <strong>{event.seats_taken} от {event.capacity}</strong> места · {a.label}
+      </p>
+    </div>
+    <div class="head-actions">
+      <a class="btn btn--ghost" href={`/admin/zapisvaniya/${id}?csv=1`}>Свали списъка (CSV)</a>
+      <a class="btn btn--ghost" href={`/admin/rabotilnitsa/${id}`}>Промени работилницата</a>
+    </div>
+  </div>
+
+  {rows.length === 0 && (
+    <div class="card empty">
+      <h2>Още никой не се е записал.</h2>
+      <p class="sub">Щом някой се запише, ще се появи тук.</p>
+    </div>
+  )}
+
+  {sections.map(({ key, title, hint }) => groups[key].length > 0 && (
+    <section class="card group">
+      <header class="group__head">
+        <h2 class="group__title">{title} <span class="count">{groups[key].length}</span></h2>
+        {hint && <p class="sub">{hint}</p>}
+      </header>
+      <table>
+        <thead>
+          <tr><th>Име</th><th>Връзка</th><th>Места</th><th>Бележка</th><th></th></tr>
+        </thead>
+        <tbody>
+          {groups[key].map((r) => (
+            <tr>
+              <td>
+                <strong>{r.full_name}</strong>
+                <span class="meta">{new Date(r.created_at).toLocaleDateString('bg-BG', { timeZone: 'Europe/Sofia' })}</span>
+              </td>
+              <td>
+                <a href={`tel:${r.phone}`}>{r.phone}</a>
+                <span class="meta"><a href={`mailto:${r.email}`}>{r.email}</a></span>
+              </td>
+              <td>{r.people_count}</td>
+              <td class="note-cell">{r.note}</td>
+              <td class="right">
+                <form method="POST" class="inline">
+                  <input type="hidden" name="reg_id" value={r.id} />
+                  {key !== 'confirmed' && (
+                    <button class="btn btn--ghost btn--sm" name="status" value="confirmed">Потвърди</button>
+                  )}
+                  {key === 'confirmed' && (
+                    <button class="btn btn--ghost btn--sm" name="status" value="attended">Дойде</button>
+                  )}
+                  {key !== 'cancelled' && (
+                    <button class="btn btn--danger btn--sm" name="status" value="cancelled">Отказа се</button>
+                  )}
+                </form>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  ))}
+
+  <style>
+    .head-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .group { margin-bottom: 1.25rem; overflow: hidden; }
+    .group__head { padding: 1rem 0.75rem 0.5rem; }
+    .group__title { font-size: 1.05rem; }
+    .count {
+      font-family: var(--sans); font-size: 0.72rem; font-weight: 700; color: var(--muted);
+      border: 1px solid var(--line); border-radius: 100px; padding: 0.1em 0.55em; vertical-align: middle;
+    }
+    .meta { display: block; font-size: 0.78rem; color: var(--muted); }
+    .meta a, td > a { color: inherit; }
+    .note-cell { color: var(--muted); max-width: 22rem; }
+    .right { text-align: right; white-space: nowrap; }
+    .inline { display: inline-flex; gap: 0.35rem; }
+    .empty { padding: 3rem 1.5rem; text-align: center; }
+    .empty h2 { font-size: 1.3rem; margin-bottom: 0.35rem; }
+  </style>
+</Admin>
