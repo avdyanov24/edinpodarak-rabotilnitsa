@@ -44,4 +44,9 @@ import { u } from '../lib/url';
   .nf__body { color: var(--muted); max-width: 34rem; margin: 0 auto 2.4rem; }
   .nf__act { display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center; justify-content: center; }
   .nf__home { font-size: var(--step--1); }
+
+  /* Thumb-sized targets on phones. */
+  @media (max-width: 560px) {
+    .nf__home { display: inline-flex; align-items: center; min-height: 44px; }
+  }
 </style>

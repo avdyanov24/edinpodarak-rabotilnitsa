@@ -412,6 +412,12 @@ const facts = next
     .hero__pieceFrame { animation: none; }
     .hero__cueLine { animation: none; }
   }
+
+  /* Micro-labels: readable in the hand, not just on a desktop. */
+  @media (max-width: 560px) {
+    .hero__fact dt { font-size: 0.78rem; letter-spacing: 0.01em; }
+    .hero__cueText { font-size: 0.76rem; letter-spacing: 0.22em; }
+  }
 </style>
 
 <script>

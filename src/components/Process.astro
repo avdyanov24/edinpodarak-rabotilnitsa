@@ -140,38 +140,42 @@ import { process } from '../data/site';
     .pr__rail { display: none; }
   }
 
-  /* --- phone: the rail turns vertical and runs down the left --- */
+  /* --- phone ---
+     The rail used to run down the left with the clock times turned on their
+     side, which cost 38px of a 390px screen and made the times a squint.
+     Here each moment is announced in a line of its own — dot, time, rule —
+     and the photograph takes the full width of the screen, which is the
+     whole point of the section. */
   @media (max-width: 620px) {
-    .pr__list { grid-template-columns: 1fr; gap: 0; padding-left: 2.4rem; }
-    .pr__rail {
-      display: block;
-      top: 7px;
-      bottom: 2rem;
-      left: 7px;
-      right: auto;
-      width: 1px;
-      height: auto;
+    .pr__list { grid-template-columns: 1fr; gap: 0; padding-left: 0; }
+    .pr__rail { display: none; }
+
+    .pr__step { padding-bottom: 3.25rem; gap: 1rem; }
+    .pr__mark { position: static; height: auto; }
+    .pr__mark::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: color-mix(in oklab, var(--cream) 16%, transparent);
     }
-    .pr__railFill {
-      width: 100%;
-      transform: scaleY(var(--p, 0));
-      transform-origin: top;
+    .pr__mark .pr__at { position: static; writing-mode: horizontal-tb; }
+
+    .pr__media {
+      margin-inline: calc(-1 * var(--gutter));
+      border-radius: 0;
     }
-    .pr__step { padding-bottom: 2.75rem; }
-    .pr__mark { position: absolute; left: 0; }
-    .pr__mark .pr__at {
-      position: absolute;
-      top: 1.5rem;
-      left: 1px;
-      writing-mode: vertical-rl;
-    }
-    .pr__media img { aspect-ratio: 16 / 11; }
+    .pr__media img { aspect-ratio: 5 / 4; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .pr__media { clip-path: none; transition: none; }
     .pr__media img { transform: none; }
     .pr__railFill { transition: none; }
+  }
+
+  /* Micro-labels: readable in the hand, not just on a desktop. */
+  @media (max-width: 560px) {
+    .pr__at { font-size: 0.76rem; letter-spacing: 0.1em; }
   }
 </style>
 

@@ -219,6 +219,13 @@ const nav = [
   @media (prefers-reduced-motion: reduce) {
     .menu__link { opacity: 1; transform: none; animation: none; }
   }
+
+  /* Micro-labels: readable in the hand, not just on a desktop. */
+  @media (max-width: 560px) {
+    .hdr__brandText small { font-size: 0.76rem; letter-spacing: 0.13em; }
+    .menu__foot .link { display: inline-flex; align-items: center; min-height: 44px; }
+    .menu__num { font-size: 0.78rem; letter-spacing: 0.12em; }
+  }
 </style>
 
 <script>

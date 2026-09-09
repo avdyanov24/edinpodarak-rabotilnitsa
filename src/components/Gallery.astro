@@ -13,7 +13,10 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
     <header class="gal__head">
       <h2 class="gal__title">{gallery.title}</h2>
       <p class="gal__lede">{gallery.lede}</p>
-      <p class="gal__hint" aria-hidden="true">Кликни, за да разгледаш</p>
+      <p class="gal__hint" aria-hidden="true">
+        <span class="gal__hintPointer">Кликни, за да разгледаш</span>
+        <span class="gal__hintTouch">Докосни, за да разгледаш</span>
+      </p>
     </header>
 
     <div class="gal__wall">
@@ -100,6 +103,13 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
   .gal__head { max-width: 48ch; margin-bottom: clamp(3rem, 6vw, 5rem); }
   .gal__title { font-size: var(--step-4); margin-bottom: 0.9rem; }
   .gal__lede { color: var(--muted); margin: 0 0 0.9rem; }
+  /* "Кликни" is wrong advice on a phone. */
+  .gal__hintTouch { display: none; }
+  @media (hover: none) {
+    .gal__hintPointer { display: none; }
+    .gal__hintTouch { display: inline; }
+  }
+
   .gal__hint {
     margin: 0;
     font-size: 0.66rem;
@@ -248,9 +258,11 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
     .gal__wire { top: -1.8rem; height: 1.8rem; }
     .gal__nail { top: calc(-1.8rem - 3px); }
     .gal__plate { padding-top: 0.6rem; font-size: 0.72rem; }
+    /* Three lines fits every caption there is; two clipped one of them and
+       an ellipsis mid-sentence reads as unfinished. */
     .gal__plateText {
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -259,6 +271,12 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
   @media (prefers-reduced-motion: reduce) {
     .gal__frame { transform: none; }
     .gal__btn:hover .gal__frame, .gal__btn:focus-visible .gal__frame { transform: none; }
+  }
+
+  /* Micro-labels: readable in the hand, not just on a desktop. */
+  @media (max-width: 560px) {
+    .gal__hint { font-size: 0.78rem; letter-spacing: 0.01em; }
+    .gal__plate, .gal__plateText { font-size: 0.78rem; }
   }
 </style>
 

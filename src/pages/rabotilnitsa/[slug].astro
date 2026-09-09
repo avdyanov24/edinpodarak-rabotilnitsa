@@ -247,4 +247,14 @@ const jsonLd = {
     .ev__side { position: static; }
     .ev__figure { order: -1; }
   }
+
+  /* Micro-labels: readable in the hand, not just on a desktop. */
+  @media (max-width: 560px) {
+    .ev__facts dt { font-size: 0.78rem; letter-spacing: 0.1em; }
+  }
+
+  /* Thumb-sized targets on phones. */
+  @media (max-width: 560px) {
+    .ev__back { display: inline-flex; align-items: center; min-height: 44px; }
+  }
 </style>

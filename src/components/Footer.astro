@@ -238,6 +238,17 @@ const letters = [...legal.studioName];
     .ft__nav { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 460px) { .ft__nav { grid-template-columns: 1fr; } }
+
+  /* Micro-labels: readable in the hand, not just on a desktop. */
+  @media (max-width: 560px) {
+    .ft__h { font-size: 0.78rem; letter-spacing: 0.01em; }
+  }
+
+  /* Thumb-sized targets on phones. */
+  @media (max-width: 560px) {
+    .ft__nav a.link { display: flex; align-items: center; min-height: 44px; }
+    .ft__credit .st { padding-block: 0.6rem; }
+  }
 </style>
 
 <script>
