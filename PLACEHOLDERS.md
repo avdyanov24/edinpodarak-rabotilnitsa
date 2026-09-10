@@ -32,13 +32,14 @@ Prices are shown in EUR, which matches her shop.
 
 ## Backend status
 
-The Supabase schema, booking function, RLS and admin panel are built and tested,
-but **no Supabase project exists yet** — that needs an account, so it is one of
-the handover steps. Follow `SUPABASE.md`.
+Live. Supabase is connected, the migrations are applied, bookings are taken and
+counted, and the retention job runs nightly. The three workshops above are
+seeded into it, together with the synthetic bookings that make the seat counts
+add up — those are named `Резервирано N (демо)` in the panel so they are
+obvious. **Delete them when the real dates go in.**
 
-Until then the site runs off `.data/db.json`, seeded from `src/data/events.ts`.
-The admin panel shows a yellow banner saying so. Anything entered there before
-Supabase is connected stays on that one machine.
+`.data/db.json` is only the local development stand-in; it is not what the live
+site uses.
 
 ## Blocking before launch
 
@@ -47,8 +48,9 @@ Supabase is connected stays on that one machine.
    notice is not valid without it. Her shop publishes none of this either,
    which is worth telling her.
 3. **Real workshop photos** to replace the stock ones.
-4. **Real event details** for at least the next date.
-5. **A Supabase project** (`SUPABASE.md`), and her login created in it.
+4. **Real event details** for at least the next date, and the demo rows deleted.
+5. **Her own login** in Supabase → Authentication → Users, and the shared admin
+   password changed.
 6. **A native Bulgarian read of every string.** The copy has had a calque pass
    but register cannot be guaranteed by anyone who is not a native speaker —
    Джейля is the right reader, and it is her voice on the page.

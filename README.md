@@ -5,6 +5,15 @@ Single-page site for the Scandinavian-moss workshops run by Джейля
 
 Bulgarian only. Intended to live at **rabotilnitsa.edinpodarak.com**.
 
+## Handing it over
+
+[PREDAVANE.md](PREDAVANE.md) — what is live, what still blocks launch, and what
+was deliberately left out. In Bulgarian, so it can go to the client as is.
+[PLACEHOLDERS.md](PLACEHOLDERS.md) lists every invented word and number.
+
+Джейля's own instructions live inside the panel, at `/admin/pomosht`, rather
+than in a file she would have to keep.
+
 ## Run it
 
 ```bash
