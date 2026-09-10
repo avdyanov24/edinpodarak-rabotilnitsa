@@ -19,10 +19,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
   h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
 
   if (context.url.pathname.startsWith('/admin') || context.url.pathname.startsWith('/otkazhi')) {
-    // Personal data. Not into a shared browser's cache, and no address
-    // handed to whatever site is linked from here.
+    // Personal data: keep it out of a shared browser's cache, and do not hand
+    // the address of a cancellation link to whatever site is linked from it.
+    //
+    // `same-origin` rather than `no-referrer`, deliberately: no-referrer makes
+    // Chrome send `Origin: null` on a form post, which Astro's cross-site
+    // check then rejects — it would have made the panel impossible to log
+    // into. This still sends nothing to other sites.
     h.set('Cache-Control', 'no-store, max-age=0');
-    h.set('Referrer-Policy', 'no-referrer');
+    h.set('Referrer-Policy', 'same-origin');
   }
 
   return response;

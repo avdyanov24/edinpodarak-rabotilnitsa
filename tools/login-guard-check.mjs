@@ -56,6 +56,18 @@ const isLocked = (t) => /Твърде много опити|Заключено �
   await c.close();
 }
 
+// --- a real form submission must reach the login at all ---
+// `Referrer-Policy: no-referrer` made Chrome send `Origin: null`, which
+// Astro's cross-site check rejected — the panel could not be logged into by
+// anyone. Headers and CSRF interact; this is here so that cannot recur.
+{
+  const { c, p } = await fresh();
+  const r = await attempt(p, 'formcheck@example.com', 'wrong');
+  ok('a browser form post is not rejected as cross-site',
+     !/Cross-site|forbidden/i.test(r.text), r.text.slice(0, 60));
+  await c.close();
+}
+
 // --- grinding one account locks that account ---
 let emailLockedAt = null;
 {
@@ -100,7 +112,9 @@ ok('the lockout says when to come back', /след .{1,12}минут/.test(lockT
   const h = (await p.request.get(`${B}/admin/vhod`)).headers();
   ok('the panel is not cacheable', /no-store/.test(h['cache-control'] ?? ''), h['cache-control']);
   ok('the panel cannot be framed', (h['x-frame-options'] ?? '').toUpperCase() === 'DENY', h['x-frame-options']);
-  ok('no referrer leaks out of the panel', (h['referrer-policy'] ?? '') === 'no-referrer', h['referrer-policy']);
+  // same-origin, not no-referrer: no-referrer strips the Origin header from
+  // form posts and Astro's cross-site check then rejects the login
+  ok('the panel sends no referrer to other sites', (h['referrer-policy'] ?? '') === 'same-origin', h['referrer-policy']);
   const pub = (await p.request.get(`${B}/`)).headers();
   ok('the public site sets nosniff', pub['x-content-type-options'] === 'nosniff', pub['x-content-type-options']);
   ok('the public site cannot be framed', (pub['x-frame-options'] ?? '').toUpperCase() === 'DENY', pub['x-frame-options']);
