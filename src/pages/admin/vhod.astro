@@ -3,6 +3,7 @@ import Admin from '../../layouts/Admin.astro';
 import { signIn, setSession, readSession } from '../../lib/auth';
 import { db } from '../../lib/db';
 import { isConfigured } from '../../lib/auth';
+import { checkLogin, recordLogin, retryPhrase } from '../../lib/login-guard';
 
 export const prerender = false;
 
@@ -16,16 +17,37 @@ const configured = isConfigured();
 if (configured && readSession(Astro.cookies)) return Astro.redirect('/admin', 302);
 
 let error = '';
+let locked = false;
+
 if (configured && Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const email = String(form.get('email') ?? '');
+  const email = String(form.get('email') ?? '').trim();
   const password = String(form.get('password') ?? '');
-  if (await signIn(email, password)) {
+  const ip = Astro.clientAddress ?? 'unknown';
+
+  const throttle = await checkLogin(ip, email);
+  if (throttle.locked) {
+    // Refuse before touching the password at all, so a locked-out attacker
+    // learns nothing from how long the answer takes.
+    locked = true;
+    error = `Твърде много опити. Опитай пак ${retryPhrase(throttle.retryAfter)}.`;
+    Astro.response.status = 429;
+  } else if (await signIn(email, password)) {
+    await recordLogin(ip, email, true);
     setSession(Astro.cookies, email);
     return Astro.redirect('/admin', 302);
+  } else {
+    await recordLogin(ip, email, false);
+    // A deliberate pause. It costs a person nothing and it is the difference
+    // between thousands of guesses an hour and a handful.
+    await new Promise((r) => setTimeout(r, 700));
+    error = 'Имейлът или паролата не съвпадат.';
+    Astro.response.status = 401;
   }
-  error = 'Имейлът или паролата не съвпадат.';
 }
+
+// A login page has no business in any cache.
+Astro.response.headers.set('Cache-Control', 'no-store, max-age=0');
 ---
 
 <Admin title="Вход">
@@ -53,7 +75,13 @@ if (configured && Astro.request.method === 'POST') {
         <label for="password">Парола</label>
         <input id="password" name="password" type="password" required autocomplete="current-password" />
       </div>
-      <button class="btn" type="submit">Влез</button>
+      <button class="btn" type="submit" disabled={locked}>Влез</button>
+      {locked && (
+        <p class="lockNote">
+          Заключено за кратко след няколко сгрешени опита. Ако си ти —
+          изчакай и опитай пак.
+        </p>
+      )}
     </form>
 
     {db.kind === 'local' && (
@@ -71,5 +99,6 @@ if (configured && Astro.request.method === 'POST') {
     .login__card { padding: 1.5rem; margin-top: 1.5rem; }
     .login__hint { margin-top: 1.25rem; }
     .login__hint code { background: #F0EBDF; padding: 0.1em 0.35em; border-radius: 3px; }
-  </style>
+    .lockNote { margin: 0.9rem 0 0; font-size: 0.85rem; color: var(--muted); }
+</style>
 </Admin>

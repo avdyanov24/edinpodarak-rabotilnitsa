@@ -22,7 +22,7 @@ await db.exec(`
   end $$;
 `);
 
-for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention']) {
+for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts']) {
   try {
     await db.exec(readFileSync(`supabase/migrations/${f}.sql`, 'utf8'));
     ok(`migration ${f} applies`, true);
@@ -109,6 +109,42 @@ await db.query(`
   select id, 'Стар', 'old@e.co', '0888123456' from events where slug = 'old'`);
 const purged = await db.query(`select public.purge_old_registrations() as n`);
 ok('purges registrations older than 12 months', purged.rows[0].n === 1, `deleted ${purged.rows[0].n}`);
+
+// --- the login throttle -------------------------------------------------------
+// The panel holds every attendee's name, phone and email. This is the SQL the
+// live site runs; the browser test exercises the in-memory stand-in instead,
+// so without this the real path would go untested.
+const throttle = async (ip, email) =>
+  (await db.query(`select * from public.login_throttle($1, $2)`, [ip, email])).rows[0];
+const record = (ip, email, okFlag) =>
+  db.query(`select public.record_login_attempt($1, $2, $3)`, [ip, email, okFlag]);
+
+ok('a clean address is not locked', (await throttle('10.0.0.1', 'a@e.co')).locked === false);
+
+// five wrong passwords for one account
+for (let i = 0; i < 5; i++) await record('10.0.0.1', 'a@e.co', false);
+const emailLock = await throttle('10.0.0.1', 'a@e.co');
+ok('five failures lock that account', emailLock.locked === true, `ip=${emailLock.ip_fails} email=${emailLock.email_fails}`);
+ok('the lock says how long to wait', Number(emailLock.retry_after) > 0, `${emailLock.retry_after}s`);
+
+// a different account from the same address is still allowed — until the
+// address itself has had enough
+ok('another account from the same address still works', (await throttle('10.0.0.1', 'b@e.co')).locked === false);
+for (let i = 0; i < 3; i++) await record('10.0.0.1', `c${i}@e.co`, false);
+ok('eight failures lock the whole address', (await throttle('10.0.0.1', 'b@e.co')).locked === true);
+
+// somebody else is unaffected
+ok('a different address is untouched', (await throttle('10.0.0.9', 'b@e.co')).locked === false);
+
+// getting it right clears the slate
+await record('10.0.0.1', 'a@e.co', true);
+ok('a correct password clears the lock', (await throttle('10.0.0.1', 'a@e.co')).locked === false);
+
+// and the table does not grow forever
+await db.query(`update public.login_attempts set at = now() - interval '2 days'`);
+await record('10.0.0.2', 'd@e.co', false);
+const left = await db.query(`select count(*)::int as n from public.login_attempts where at < now() - interval '24 hours'`);
+ok('old attempts are cleaned up', left.rows[0].n === 0, `${left.rows[0].n} stale rows left`);
 
 await db.close();
 let failed = 0;

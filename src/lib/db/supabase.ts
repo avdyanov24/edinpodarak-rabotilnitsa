@@ -10,7 +10,7 @@ import { env } from '../env';
  * The service-role client. It bypasses RLS, so it must only ever run on the
  * server — never imported into anything that ships to the browser.
  */
-function admin(): SupabaseClient {
+export function admin(): SupabaseClient {
   const url = env('SUPABASE_URL');
   const key = env('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !key) throw new DbError('missing_env', 'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set');
