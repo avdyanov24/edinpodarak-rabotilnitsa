@@ -162,16 +162,23 @@ a { color: inherit; }
 }
 
 /* ---------- link with animated underline ---------- */
+/*
+ * The underline is always there, and firms up on hover.
+ *
+ * It used to be drawn as a background gradient that only appeared on hover,
+ * so on a phone every inline link looked exactly like the sentence around
+ * it. A background also anchors to the bottom of the box, which detached it
+ * from the text wherever a link was given a 44px tap height; a text
+ * decoration follows the words instead.
+ */
 .link {
-  text-decoration: none;
-  background-image: linear-gradient(currentColor, currentColor);
-  background-size: 0% 1px;
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  transition: background-size 0.45s var(--ease-out);
-  padding-bottom: 2px;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in oklab, currentColor 32%, transparent);
+  text-underline-offset: 0.28em;
+  transition: text-decoration-color 0.35s var(--ease-out);
 }
-.link:hover { background-size: 100% 1px; }
+.link:hover { text-decoration-color: currentColor; }
 
 /* ---------- paper grain, sits above everything ---------- */
 .grain {
