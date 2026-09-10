@@ -99,7 +99,15 @@ const ogImage = abs(image, Astro.site);
               }
             }
           },
-          { rootMargin: '0px 0px -8% 0px', threshold: [0, 0.08] }
+          // A thumb travels a lot faster than a mouse wheel, so on a phone
+          // the reveal has to start before the element is properly on screen
+          // — otherwise it is still fading in as it goes past.
+          {
+            rootMargin: window.matchMedia('(max-width: 780px)').matches
+              ? '0px 0px 10% 0px'
+              : '0px 0px -8% 0px',
+            threshold: [0, 0.08],
+          }
         );
         items.forEach((el) => io.observe(el));
       } else {

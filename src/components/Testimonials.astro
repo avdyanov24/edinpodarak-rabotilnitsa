@@ -115,4 +115,31 @@ const { items = testimonials.items } = Astro.props;
   @media (prefers-reduced-motion: reduce) {
     .tm__item:hover .tm__fig { transform: none; }
   }
+
+  /* --- phone ---
+     Three cards stacked is the desktop grid with the columns knocked over:
+     1,163px of scrolling to read three sentences. Side by side instead, one
+     to a screen, with the next one peeking so it is obvious they swipe. */
+  @media (max-width: 780px) {
+    .tm__list {
+      grid-auto-flow: column;
+      grid-auto-columns: 82%;
+      gap: 0.85rem;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      padding-bottom: 0.4rem;
+      scrollbar-width: none;
+    }
+    .tm__list::-webkit-scrollbar { display: none; }
+    .tm__item { scroll-snap-align: start; height: 100%; }
+
+    /* The cards no longer fade in on their own: in a rail that means a card
+       re-fading every time it is swiped back to, which reads as a glitch
+       rather than a flourish. The section still arrives as a whole. */
+    :global(html.js) .tm__item[data-reveal] { opacity: 1; transform: none; }
+  }
 </style>

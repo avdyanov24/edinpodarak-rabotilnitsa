@@ -201,6 +201,18 @@ a { color: inherit; }
 }
 .js [data-reveal].is-in { opacity: 1; transform: none; }
 
+/* On a phone the same 0.9s reads as sluggish — the page has usually moved on
+   before the element has finished arriving. Shorter, a little more travel so
+   the movement is legible at speed, and the stagger capped so the last item
+   in a list is not still waiting its turn. */
+@media (max-width: 780px) {
+  .js [data-reveal] {
+    transform: translateY(22px);
+    transition-duration: 0.55s;
+    transition-delay: min(var(--reveal-delay, 0ms), 140ms);
+  }
+}
+
 /* ---------- dark section ---------- */
 .dark {
   background: var(--forest-dp);

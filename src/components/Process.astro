@@ -141,30 +141,69 @@ import { process } from '../data/site';
   }
 
   /* --- phone ---
-     The rail used to run down the left with the clock times turned on their
-     side, which cost 38px of a 390px screen and made the times a squint.
-     Here each moment is announced in a line of its own — dot, time, rule —
-     and the photograph takes the full width of the screen, which is the
-     whole point of the section. */
+     A real vertical timeline: one line down the left, a dot and a clock time
+     for each moment, and the photograph reaching out to the right edge of the
+     screen. The line fills as the section is scrolled, so the progress down
+     the two hours is something you can see rather than infer. */
   @media (max-width: 620px) {
-    .pr__list { grid-template-columns: 1fr; gap: 0; padding-left: 0; }
-    .pr__rail { display: none; }
-
-    .pr__step { padding-bottom: 3.25rem; gap: 1rem; }
-    .pr__mark { position: static; height: auto; }
-    .pr__mark::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: color-mix(in oklab, var(--cream) 16%, transparent);
+    .pr__list {
+      grid-template-columns: 1fr;
+      gap: 0;
+      padding-left: 2.35rem;
     }
-    .pr__mark .pr__at { position: static; writing-mode: horizontal-tb; }
 
+    .pr__rail {
+      display: block;
+      top: 0.5rem;
+      bottom: 3.2rem;
+      left: 7px;
+      right: auto;
+      width: 1px;
+      height: auto;
+    }
+    .pr__railFill {
+      width: 100%;
+      transform: scaleY(var(--p, 0));
+      transform-origin: top;
+    }
+
+    .pr__step { position: relative; padding-bottom: 3.1rem; gap: 0.85rem; }
+    .pr__step:last-child { padding-bottom: 0; }
+
+    /* the dot sits on the line, the time beside it */
+    .pr__mark { position: static; height: auto; gap: 0; }
+    .pr__node { position: absolute; left: -2.35rem; top: 0.1rem; }
+    .pr__at {
+      position: static;
+      writing-mode: horizontal-tb;
+      display: block;
+      padding-top: 0.15rem;
+    }
+
+    /* out to the right edge — the picture is what the step is about */
     .pr__media {
-      margin-inline: calc(-1 * var(--gutter));
-      border-radius: 0;
+      margin-right: calc(-1 * var(--gutter));
+      border-radius: 3px 0 0 3px;
     }
-    .pr__media img { aspect-ratio: 5 / 4; }
+    .pr__media img { aspect-ratio: 4 / 3; }
+
+    /* Name the moment, then show it. The markup order puts the photograph
+       first, which is right for the desktop columns and backwards when the
+       step is read top to bottom: display:contents lifts the title and the
+       text out of their wrapper so they can be ordered around the picture. */
+    .pr__step { display: grid; }
+    .pr__body { display: contents; }
+    .pr__mark { order: 0; }
+    .pr__stepTitle { order: 1; font-size: var(--step-1); }
+    .pr__media { order: 2; }
+    .pr__body p { order: 3; }
+
+    /* The steps arrive one at a time down the timeline, so the stagger that
+       makes the four desktop columns cascade only delays things here. */
+    :global(html.js) .pr__media {
+      transition-duration: 0.7s;
+      transition-delay: 0ms;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -190,10 +229,36 @@ import { process } from '../data/site';
       steps.forEach((s) => s.classList.add('is-on'));
       rail?.style.setProperty('--p', '1');
     } else {
+      const list = document.querySelector<HTMLElement>('.pr__list');
+      const narrow = window.matchMedia('(max-width: 620px)');
       let ticking = false;
+
       const update = () => {
-        const rect = section.getBoundingClientRect();
         const vh = window.innerHeight;
+
+        if (narrow.matches) {
+          /**
+           * Stacked down the page, each moment has to answer for itself.
+           *
+           * Driving all four from the section's overall progress is right for
+           * four columns side by side and wrong for a 2,800px column: a photo
+           * could be filling the screen while the section as a whole had not
+           * progressed far enough to light it, so it sat half wiped shut.
+           */
+          steps.forEach((step) => {
+            const r = step.getBoundingClientRect();
+            step.classList.toggle('is-on', r.top < vh * 0.82 && r.bottom > 0);
+          });
+          if (list) {
+            const lr = list.getBoundingClientRect();
+            const through = (vh * 0.82 - lr.top) / Math.max(lr.height, 1);
+            rail?.style.setProperty('--p', Math.max(0, Math.min(1, through)).toFixed(3));
+          }
+          ticking = false;
+          return;
+        }
+
+        const rect = section.getBoundingClientRect();
         // 0 as the section reaches the lower third, 1 once it has cleared the middle
         const raw = (vh * 0.72 - rect.top) / (rect.height * 0.62);
         const p = Math.max(0, Math.min(1, raw));
@@ -211,6 +276,7 @@ import { process } from '../data/site';
         if (!ticking) { ticking = true; requestAnimationFrame(update); }
       }, { passive: true });
       window.addEventListener('resize', update, { passive: true });
+      narrow.addEventListener('change', update);
       update();
     }
   }
