@@ -6,7 +6,7 @@ const on = await b.newPage({ viewport: { width: 1440, height: 900 } });
 await on.goto('http://localhost:4321/', { waitUntil: 'networkidle' });
 await on.waitForTimeout(2500);
 const piece = await on.evaluate(() => {
-  const el = document.querySelector('.hero__piece');
+  const el = document.querySelector('.hang--near');
   const cs = getComputedStyle(el);
   const r = el.getBoundingClientRect();
   return { opacity: cs.opacity, display: cs.display, w: Math.round(r.width), h: Math.round(r.height) };

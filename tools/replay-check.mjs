@@ -56,7 +56,7 @@ ok('reset: photos re-clipped', w0 === 0, `${w0} still open`);
 
 // hero entrance restarts
 const heroReplayed = await p.evaluate(() => {
-  const el = document.querySelector('.hero__eyebrow');
+  const el = document.querySelector('.hero__lede');
   const a = el.getAnimations();
   // a freshly restarted animation is near the beginning of its 1s run
   return a.length > 0 && a[0].currentTime !== null && a[0].currentTime < 2500;

@@ -26,11 +26,19 @@ export const hero = {
   ctaPrimary: 'Виж свободните дати',
   ctaSecondary: 'Как протича',
   scroll: 'Разгледай',
-  /** Hangs over the hero — the first thing that says what you leave with. */
+  /**
+   * Two of her pieces hang over the hero at different depths. They are the
+   * first thing that says what you leave with, and the reason the section
+   * is never quite still.
+   */
   piece: {
     src: '/media/gallery/ramka-shadowbox.webp',
     alt: 'Кръгла композиция от скандинавски мъх с гравирано послание',
     caption: 'Направено на работилница',
+  },
+  piece2: {
+    src: '/media/gallery/buket-ramka.webp',
+    alt: 'Букет от скандинавски мъх в дървена рамка',
   },
   facts: [
     { k: 'Трае', v: '2 часа' },
