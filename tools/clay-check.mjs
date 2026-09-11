@@ -76,8 +76,18 @@ for (const [label, w, h, mob] of [['desktop 1440', 1440, 900, false], ['phone 39
     !(await p.locator('[data-clay-hint]').evaluate((e) => e.classList.contains('is-gone')))
     && await p.locator('[data-clay-smooth]').evaluate((e) => e.hasAttribute('hidden')));
 
-  // press a line across it
+  // Hovering must leave the slab alone — a pointer crossing it on the way to
+  // the text used to scribble a line the whole width of the section.
   const box = await slab.boundingBox();
+  await p.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.3);
+  await p.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.7, { steps: 20 });
+  await p.waitForTimeout(300);
+  ok(`${label}: hovering without pressing leaves no mark`,
+    diff(rest, await pixels(p)) === 0
+    && await p.locator('[data-clay-smooth]').evaluate((e) => e.hasAttribute('hidden')),
+    `Δ ${diff(rest, await pixels(p)).toFixed(3)}`);
+
+  // press a line across it
   await p.mouse.move(box.x + box.width * 0.14, box.y + box.height * 0.5);
   await p.mouse.down();
   for (let i = 1; i <= 24; i++) {

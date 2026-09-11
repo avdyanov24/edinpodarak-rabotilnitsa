@@ -29,7 +29,7 @@
     <figure class="clay__slab" data-reveal>
       <canvas class="clay__canvas" data-clay-canvas aria-hidden="true"></canvas>
       <figcaption class="clay__hint" data-clay-hint>
-        <span class="clay__hintPointer">Прекарай мишката по глината</span>
+        <span class="clay__hintPointer">Натисни и влачи по глината</span>
         <span class="clay__hintTouch">Прекарай пръст по глината</span>
       </figcaption>
       <button class="clay__smooth" type="button" data-clay-smooth hidden>
@@ -429,9 +429,11 @@
       begin(e);
     });
     canvas.addEventListener('pointermove', (e) => {
-      // A mouse presses on hover, the way a hand rests on clay. A finger has
-      // to be down, or scrolling past would scribble all over it.
-      if (e.pointerType !== 'mouse' && e.buttons === 0) { end(); return; }
+      // Nothing draws unless something is pressing. Letting a mouse draw on
+      // hover seemed truer to clay and was wrong in practice: moving the
+      // pointer across to read the text scribbled all over the slab, and you
+      // cannot press clay by waving at it either.
+      if (e.buttons === 0) { end(); return; }
       if (!stroke.length) { begin(e); return; }
       extend(e);
     });
