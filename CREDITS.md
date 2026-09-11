@@ -1,29 +1,34 @@
-# Image and video credits
+# Image credits
 
 ## Client's own material
-Product photography, logo and finished pieces: Джейля / „Подари с Джейля“
-(edinpodarak.com, instagram.com/djeilqart). Used with the client's material for
-the client's own site.
+Logo: Джейля / „Подари с Джейля“ (edinpodarak.com, instagram.com/djeilqart).
 
 ## Pexels (free licence, no attribution required — listed for traceability)
 
-Video
-- Hero forest: pexels.com/video/moss-on-ground-in-forest-7645660/
-- Moss close-up: pexels.com/video/close-up-video-of-a-moss-3161277/
+**Every photograph on the site is stock and is a placeholder.** The workshops
+are hers; these pictures are not. Replace them with photos from her own
+ceramics workshops in Гоце Делчев as soon as she sends them.
 
-Photos — moss and lichen textures
-- pexels.com/photo/18012355/ (moss close-up, used inside the word "живо")
-- pexels.com/photo/19701814/ (budding lichen)
-- pexels.com/photo/16842009/ (fresh growth)
-- pexels.com/photo/39321714/, /35917091/, /12768075/, /1072824/, /969044/
+Hero
+- pexels.com/photo/6611187/ — handmade mugs on a studio shelf (the hero ground)
+- pexels.com/photo/28509629/ — glazed cups on a wooden table (the near piece)
+- pexels.com/photo/4830752/ — a cup in a workshop (the far piece)
+- pexels.com/photo/6611175/ — raw clay, used inside the word „свое“
 
-Photos — workshop atmosphere (placeholders; replace with her own)
-- pexels.com/photo/27837207/ (arranging flowers)
-- pexels.com/photo/4690306/ (hands crafting)
-- pexels.com/photo/7023733/ (gluing dried flowers)
-- pexels.com/photo/5756952/ (art class — used in the private-workshops band)
-- pexels.com/photo/8775400/ (wine being poured — the "Чаша вино" row)
+Gallery — finished ceramics
+- pexels.com/photo/6611421/, /1724181/, /27682102/, /7674544/, /15362162/,
+  /6611188/, /9497050/, /37984754/, /6754875/
+
+Workshop — the four moments and what is included
+- pexels.com/photo/5642023/ (clay on the board), /30909747/ (shaping),
+  /34248159/ (painting a mug), /8063803/ (waiting to be fired)
+- pexels.com/photo/26792250/, /7375048/, /9736908/, /37658046/ (lemonade),
+  /37827259/, /37827252/ (the private-workshops band)
 
 All Pexels media may be used commercially without attribution; it may not be
 resold as stock, and identifiable people may not be shown as endorsing a
 product. Nothing here does either.
+
+## Removed
+The previous set — moss, lichen and forest video, plus her moss-art product
+photography — was taken out when the workshops turned out to be ceramics.

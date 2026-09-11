@@ -16,8 +16,6 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
   style={`--tilt:${tilt}deg; --reveal-delay:${index * 90}ms`}
   data-reveal
 >
-  <span class="card__nail" aria-hidden="true"></span>
-  <span class="card__wire" aria-hidden="true"></span>
 
   <a class="card__frame" href={u(`/rabotilnitsa/${event.slug}`)}>
     <span class="card__mount">
@@ -76,25 +74,13 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
   }
 
   /* A brass nail and a hanging wire — the card reads as a picture on a wall. */
-  .card__nail {
-    position: absolute;
-    top: 0; left: 50%;
-    width: 7px; height: 7px;
-    margin-left: -3.5px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #d8c188, var(--brass) 65%, #7d6733);
-    box-shadow: 0 1px 2px rgb(18 33 26 / 0.4);
-    z-index: 2;
-  }
-  .card__wire {
-    position: absolute;
-    top: 4px; left: 50%;
-    width: 46%; height: 1.55rem;
-    transform: translateX(-50%);
-    border: 1px solid color-mix(in oklab, var(--ink) 26%, transparent);
-    border-bottom: 0;
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    opacity: 0.55;
+  /* the shadow the piece casts on the shelf it stands on */
+  .card__stand {
+    display: block;
+    height: 16px;
+    margin: 0 10% -16px;
+    background: radial-gradient(62% 100% at 50% 0%, rgb(35 30 22 / 0.3), transparent 74%);
+    filter: blur(2px);
   }
 
   .card__frame {

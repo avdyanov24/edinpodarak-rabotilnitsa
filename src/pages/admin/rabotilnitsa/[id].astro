@@ -22,7 +22,7 @@ function blank(): Partial<WorkshopEvent> {
     slug: '', status: 'draft', registrations_open: true,
     title: '', summary: '', description: '', cover_image: null, gallery: [],
     starts_at: start.toISOString(), duration_minutes: 120,
-    venue_name: 'Ателие „Джейля“', venue_address: '', venue_map_url: null, city: 'Пловдив',
+    venue_name: 'Ателие „Джейля“', venue_address: '', venue_map_url: null, city: 'Гоце Делчев',
     price_cents: 3100, currency: 'EUR', price_note: 'Всички материали са включени.',
     capacity: 12, seats_taken: 0, min_age: 18,
     includes: [], bring_note: null, host_note: 'Води Джейля', waitlist_enabled: true,
@@ -128,7 +128,7 @@ const startsLocal = isoToLocalInput(event.starts_at ?? new Date().toISOString())
       <div class="field">
         <label for="title">Заглавие</label>
         <input id="title" name="title" type="text" value={event.title} required
-               placeholder="Мъх и вино" />
+               placeholder="Глина и лимонада" />
       </div>
 
       <div class="field">
@@ -222,7 +222,7 @@ const startsLocal = isoToLocalInput(event.starts_at ?? new Date().toISOString())
       <div class="field">
         <label for="includes">Какво е включено (по едно на ред)</label>
         <textarea id="includes" name="includes" rows="5"
-                  placeholder={'Рамка формат А4\nСкандинавски мъх в четири цвята'}>{(event.includes ?? []).join('\n')}</textarea>
+                  placeholder={'Глина и глеч\nИнструменти и престилка\nДвете печения след работилницата\nЧаша лимонадавята'}>{(event.includes ?? []).join('\n')}</textarea>
       </div>
       <div class="row">
         <div class="field">

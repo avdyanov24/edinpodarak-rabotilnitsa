@@ -20,7 +20,7 @@ const b64 = async (p, mime) => `data:${mime};base64,${(await readFile(join(root,
 const [display, sans, photo, logo] = await Promise.all([
   b64('node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-normal.woff2', 'font/woff2'),
   b64('node_modules/@fontsource-variable/manrope/files/manrope-cyrillic-wght-normal.woff2', 'font/woff2'),
-  b64('public/media/gallery/chasovnik-1.webp', 'image/webp'),
+  b64('public/media/piece-chashi.webp', 'image/webp'),
   b64('public/media/logo-djeilya.png', 'image/png'),
 ]);
 
@@ -55,12 +55,12 @@ const html = `<!doctype html><meta charset="utf-8">
   <div class="in">
     <div class="brand"><img src="${logo}"><span>Работилница с Джейля</span></div>
     <div>
-      <h1>Направи си<br><em>нещо живо</em></h1>
-      <p>Два часа, една рамка<br>и шепа скандинавски мъх.</p>
+      <h1>Направи си<br><em>нещо свое</em></h1>
+      <p>Два часа с глина,<br>без бързане и без опит.</p>
     </div>
     <div class="foot">
-      <span>Пловдив</span><span class="dot"></span>
-      <span>Всички материали са включени</span><span class="dot"></span>
+      <span>Гоце Делчев</span><span class="dot"></span>
+      <span>Материалите и печенето са включени</span><span class="dot"></span>
       <span>Записване онлайн</span>
     </div>
   </div>

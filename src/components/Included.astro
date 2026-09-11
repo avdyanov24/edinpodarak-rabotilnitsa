@@ -7,16 +7,16 @@ import { included } from '../data/site';
   <div class="wrap inc__grid">
     <div class="inc__media">
       <div class="inc__stack">
-        <!-- resting state: the moss itself -->
-        <video
+        <!-- resting state: what is on the table before anyone touches it -->
+        <img
           class="inc__layer inc__video"
-          poster={u("/media/muh-otblizo.jpg")}
-          muted loop playsinline preload="none"
-          aria-hidden="true" tabindex="-1"
-          data-lazy-video
-        >
-          <source data-src={u("/media/muh-otblizo.mp4")} type="video/mp4" />
-        </video>
+          src={u("/media/workshop/oformyane.webp")}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          width="1300" height="867"
+        />
 
         {included.items.map((item, i) => (
           <img
@@ -32,7 +32,7 @@ import { included } from '../data/site';
         ))}
 
         <span class="inc__caption" data-caption>
-          Скандинавският мъх е лишей. Не се полива и не иска светлина.
+          Глината помни всяко докосване. Затова никои две чаши не излизат еднакви.
         </span>
       </div>
     </div>
@@ -254,7 +254,6 @@ import { included } from '../data/site';
   const items = [...document.querySelectorAll<HTMLElement>('[data-item]')];
   const layers = [...document.querySelectorAll<HTMLElement>('[data-layer]')];
   const caption = document.querySelector('[data-caption]') as HTMLElement | null;
-  const video = document.querySelector('[data-lazy-video]') as HTMLVideoElement | null;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let active = -1;
@@ -301,22 +300,4 @@ import { included } from '../data/site';
     update();
   }
 
-  // the resting video only downloads once the section is actually reached
-  if (video) {
-    const io = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          const source = video.querySelector('source[data-src]') as HTMLSourceElement | null;
-          if (source && !source.src) {
-            source.src = source.dataset.src!;
-            video.load();
-          }
-          if (!reduce) video.play().catch(() => {});
-        } else {
-          video.pause();
-        }
-      }
-    }, { threshold: 0.2 });
-    io.observe(video);
-  }
 </script>

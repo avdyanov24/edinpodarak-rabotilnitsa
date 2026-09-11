@@ -72,7 +72,7 @@ export function availability(capacity: number, taken: number, open: boolean): Av
  * Admin form <-> database time conversion.
  *
  * <input type="datetime-local"> has no timezone: it is wall-clock time. She
- * types the hour the workshop starts in Пловдив, so it is interpreted in
+ * types the hour the workshop starts in Гоце Делчев, so it is interpreted in
  * Europe/Sofia and stored as a proper instant. Getting this wrong would shift
  * every workshop by an hour for half the year.
  * ------------------------------------------------------------------------ */

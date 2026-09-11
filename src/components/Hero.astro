@@ -19,17 +19,16 @@ const meta = next
 
 <section class="hero" id="top">
   <div class="hero__media" data-hero-media>
-    <video
+<img
       class="hero__video"
-      poster={u("/media/hero-gora.jpg")}
-      autoplay muted loop playsinline
-      preload="metadata"
+      src={u("/media/hero-atelie.webp")}
+      alt=""
       aria-hidden="true"
-      tabindex="-1"
-    >
-      <source src={u("/media/hero-gora.webm")} type="video/webm" />
-      <source src={u("/media/hero-gora.mp4")} type="video/mp4" />
-    </video>
+      width="2000"
+      height="1335"
+      fetchpriority="high"
+      decoding="async"
+    />
     <div class="hero__scrim"></div>
   </div>
 
@@ -54,19 +53,17 @@ const meta = next
          screen. Each swings at its own rate, so the wall is never still. -->
     <div class="hero__hangs" aria-hidden="true">
       <figure class="hang hang--far" data-hang style="--sway:7.5s; --lean:-1.4deg; --depth:0.35">
-        <span class="hang__wire"></span>
-        <span class="hang__nail"></span>
         <span class="hang__frame">
-          <img src={u(hero.piece2.src)} alt="" width="640" height="800" loading="lazy" decoding="async" />
+          <img src={u(hero.piece2.src)} alt="" width="1100" height="733" loading="lazy" decoding="async" />
         </span>
+        <span class="hang__shelf"></span>
       </figure>
 
       <figure class="hang hang--near" data-hang style="--sway:9.5s; --lean:1.1deg; --depth:1">
-        <span class="hang__wire"></span>
-        <span class="hang__nail"></span>
         <span class="hang__frame">
-          <img src={u(hero.piece.src)} alt="" width="635" height="640" fetchpriority="low" decoding="async" />
+          <img src={u(hero.piece.src)} alt="" width="1100" height="1650" fetchpriority="low" decoding="async" />
         </span>
+        <span class="hang__shelf"></span>
         <figcaption class="hang__cap">{hero.piece.caption}</figcaption>
       </figure>
     </div>
@@ -153,7 +150,7 @@ const meta = next
   .hero__alive {
     background-image:
       linear-gradient(rgb(214 236 190 / 0.42), rgb(214 236 190 / 0.42)),
-      url('/media/texture/muh-edro.webp');
+      url('/media/texture/glina.webp');
     background-size: 128% auto;
     background-position: 50% 58%;
     -webkit-background-clip: text;
@@ -223,36 +220,58 @@ const meta = next
     transform: translate3d(var(--px), var(--py), 0);
     transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  /* the wire runs up and off the top of the section — the rail is out of frame */
-  .hang__wire {
-    position: absolute;
-    left: 50%;
-    bottom: 100%;
-    width: 1px;
-    height: 100vh;
-    background: linear-gradient(to bottom, transparent, color-mix(in oklab, var(--cream) 34%, transparent));
+  /* A shelf, not a wire: these are pots, and pots stand on something. The
+     plank runs wider than the piece and carries its shadow. */
+  /* In flow, directly under the frame — absolutely positioned it landed
+     below the caption, which is not where a shelf goes. */
+  .hang__shelf {
+    position: relative;
+    display: block;
+    margin-inline: -14%;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--cream) 52%, transparent) 10%,
+      color-mix(in oklab, var(--cream) 52%, transparent) 90%,
+      transparent
+    );
   }
-  .hang__nail {
+  .hang__shelf::after {
+    content: "";
     position: absolute;
-    left: 50%;
-    bottom: calc(100% - 3px);
-    width: 7px;
-    height: 7px;
-    margin-left: -3.5px;
-    border-radius: 50%;
-    background: var(--brass);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+    inset: 3px 12% auto;
+    height: 16px;
+    background: linear-gradient(rgb(9 20 14 / 0.62), transparent);
+    filter: blur(2.5px);
   }
   .hang__frame {
     display: block;
+    position: relative;
     padding: 0.7rem;
     background: var(--paper);
     border-radius: 2px;
+    overflow: hidden;
     box-shadow:
       0 2px 4px rgb(0 0 0 / 0.28),
-      0 26px 60px -18px rgb(0 0 0 / 0.75);
-    transform-origin: 50% -18%;
-    animation: sway var(--sway, 9s) ease-in-out infinite alternate;
+      0 22px 50px -20px rgb(0 0 0 / 0.7);
+  }
+  /* Something standing still does not swing. The life here is the light:
+     a slow warm sweep, as if the sun were moving through the studio. */
+  .hang__frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      104deg,
+      transparent 34%,
+      rgb(255 244 214 / 0.22) 50%,
+      transparent 66%
+    );
+    background-size: 300% 100%;
+    animation: lightSweep var(--sway, 9s) ease-in-out infinite alternate;
   }
   .hang__frame img { display: block; width: 100%; height: auto; border-radius: 1px; }
   .hang__cap {
@@ -330,9 +349,9 @@ const meta = next
     from { opacity: 0; transform: translate3d(var(--px), calc(var(--py) - 26px), 0) rotate(var(--lean, 0deg)); }
     to   { opacity: 1; transform: translate3d(var(--px), var(--py), 0); }
   }
-  @keyframes sway {
-    from { transform: rotate(calc(var(--lean, 1deg) * -1)); }
-    to   { transform: rotate(var(--lean, 1deg)); }
+  @keyframes lightSweep {
+    from { background-position: 100% 0; }
+    to   { background-position: 0 0; }
   }
   /* 38 seconds end to end: you never catch it moving, only notice it has */
   @keyframes mossDrift {
@@ -414,7 +433,7 @@ const meta = next
   @media (prefers-reduced-motion: reduce) {
     .hero__line > span { transform: none; animation: none; }
     .hero__lede, .hero__actions, .ticker, .hang { opacity: 1; animation: none; }
-    .hang__frame { animation: none; }
+    .hang__frame::after { animation: none; opacity: 0; }
     .hero__alive { animation: none; }
     .hang { transition: none; }
   }
@@ -424,7 +443,6 @@ const meta = next
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const media = document.querySelector('[data-hero-media]') as HTMLElement | null;
   const hangs = [...document.querySelectorAll<HTMLElement>('[data-hang]')];
-  const video = document.querySelector('.hero__video') as HTMLVideoElement | null;
 
   /**
    * The wall reacts to two things: the page scrolling, and the pointer
@@ -491,15 +509,4 @@ const meta = next
     io.observe(hero);
   }
 
-  // Don't burn battery decoding video that nobody can see.
-  if (video) {
-    if (reduce.matches) { video.pause(); }
-    else {
-      const io = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting) video.play().catch(() => {});
-        else video.pause();
-      }, { threshold: 0.01 });
-      io.observe(video);
-    }
-  }
 </script>

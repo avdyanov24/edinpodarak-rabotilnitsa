@@ -36,7 +36,7 @@ for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', 
 // --- a 12-seat workshop with 8 already taken -------------------------------
 const ev = await db.query(`
   insert into events (slug, status, title, starts_at, capacity, waitlist_enabled, price_cents)
-  values ('test', 'published', 'Мъх и вино', now() + interval '30 days', 12, true, 3100)
+  values ('test', 'published', 'Глина и лимонада', now() + interval '30 days', 12, true, 3100)
   returning id`);
 const id = ev.rows[0].id;
 

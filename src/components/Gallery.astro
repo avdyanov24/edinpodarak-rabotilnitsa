@@ -31,8 +31,6 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
                 data-reveal
               >
                 <button class="gal__btn" type="button" data-lb={i}>
-                  <span class="gal__wire" aria-hidden="true"></span>
-                  <span class="gal__nail" aria-hidden="true"></span>
                   <span class="gal__frame">
                     <img
                       src={u(img.src)}
@@ -43,6 +41,7 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
                       decoding="async"
                     />
                   </span>
+                  <span class="gal__stand" aria-hidden="true"></span>
                   <span class="gal__plate">
                     <span class="gal__plateText">{img.caption}</span>
                     <span class="gal__plateIcon" aria-hidden="true">
@@ -126,19 +125,26 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: clamp(1rem, 2.4vw, 2rem);
-    align-items: start;
-    padding-top: 2.4rem;
+    /* Pots stand on a shelf, so the bottoms line up and the tops stay
+       ragged — the reverse of hanging pictures, which aligned at the top. */
+    align-items: end;
+    padding-bottom: 2.6rem;
   }
   .gal__row::before {
     content: "";
     position: absolute;
-    inset: 0 -2% auto;
-    top: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--rule) 6%, var(--rule) 94%, transparent);
+    inset: auto -2% 2.2rem;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--rule) 5%, var(--rule) 95%, transparent);
   }
 
   .gal__item { grid-column: span var(--span); margin: 0; }
+  /* Bottoms line up on the shelf, so the frames must too — a caption that
+     wraps to two lines would otherwise lift its piece off the line. */
+  .gal__btn { display: grid; grid-template-rows: 1fr auto auto; height: 100%; }
+  .gal__frame { align-self: end; }
+  .gal__plate { min-height: 2.9em; }
 
   .gal__btn {
     position: relative;
@@ -152,30 +158,13 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
     color: inherit;
   }
 
-  .gal__wire {
-    position: absolute;
-    left: 50%;
-    top: -2.4rem;
-    width: 34%;
-    height: 2.4rem;
-    transform: translateX(-50%);
-    border: 1px solid color-mix(in oklab, var(--ink) 24%, transparent);
-    border-bottom: 0;
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    opacity: 0.5;
-    pointer-events: none;
-  }
-  .gal__nail {
-    position: absolute;
-    left: 50%;
-    top: calc(-2.4rem - 3px);
-    width: 7px;
-    height: 7px;
-    margin-left: -3.5px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #d8c188, var(--brass) 65%, #7d6733);
-    box-shadow: 0 1px 2px rgb(18 33 26 / 0.4);
-    pointer-events: none;
+  /* the shadow a standing object casts onto the shelf under it */
+  .gal__stand {
+    display: block;
+    height: 14px;
+    margin: 0 8% -14px;
+    background: radial-gradient(60% 100% at 50% 0%, rgb(35 30 22 / 0.34), transparent 72%);
+    filter: blur(1.5px);
   }
 
   .gal__frame {
@@ -247,16 +236,14 @@ const tilts = [-1.1, 0.7, -0.5, 1, -0.8, 0.6, -1.2, 0.9, -0.6];
   @media (max-width: 900px) {
     .gal__row { display: contents; }
     .gal__wall { grid-template-columns: repeat(2, 1fr); gap: clamp(2.5rem, 6vw, 3.5rem) clamp(1rem, 3vw, 1.6rem); }
-    .gal__item { grid-column: span 1; padding-top: 2.2rem; }
+    .gal__item { grid-column: span 1; }
     .gal__row::before { display: none; }
   }
   /* Two up even on a phone: nine full-width frames would be an endless scroll,
      and the plate text moves into the lightbox where there is room for it. */
   @media (max-width: 560px) {
     .gal__wall { gap: 2rem 0.85rem; }
-    .gal__item { padding-top: 1.8rem; }
-    .gal__wire { top: -1.8rem; height: 1.8rem; }
-    .gal__nail { top: calc(-1.8rem - 3px); }
+
     .gal__plate { padding-top: 0.6rem; font-size: 0.72rem; }
     /* Three lines fits every caption there is; two clipped one of them and
        an ellipsis mid-sentence reads as unfinished. */

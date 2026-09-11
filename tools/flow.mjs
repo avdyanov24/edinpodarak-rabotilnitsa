@@ -14,7 +14,7 @@ await page.locator('[data-signup]').first().click();
 await page.waitForTimeout(600);
 ok('dialog opens', await page.locator('[data-signup-dialog]').isVisible());
 ok('dialog shows the right event',
-  (await page.locator('[data-su-title]').innerText()).includes('Мъх и вино'),
+  (await page.locator('[data-su-title]').innerText()).includes('Глина и лимонада'),
   await page.locator('[data-su-title]').innerText());
 ok('seats shown in dialog', /места|място/.test(await page.locator('[data-su-seats]').innerText()),
   await page.locator('[data-su-seats]').innerText());
@@ -131,8 +131,8 @@ await m.close();
 
 // ---------- event page ----------
 const e = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-await e.goto(`${base}/rabotilnitsa/chasovnik-ot-muh-noemvri`, { waitUntil: 'networkidle' });
-ok('event page renders', (await e.locator('h1').innerText()).includes('Часовник'));
+await e.goto(`${base}/rabotilnitsa/napravi-svoya-keramichna-chasha-noemvri`, { waitUntil: 'networkidle' });
+ok('event page renders', (await e.locator('h1').innerText()).includes('керамична чаша'));
 const ld = await e.locator('script[type="application/ld+json"]').innerText();
 const parsed = JSON.parse(ld);
 ok('Event JSON-LD present', parsed['@type'] === 'Event', `${parsed['@type']} / ${parsed.startDate}`);
