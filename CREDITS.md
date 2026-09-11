@@ -3,16 +3,32 @@
 ## Client's own material
 Logo: Джейля / „Подари с Джейля“ (edinpodarak.com, instagram.com/djeilqart).
 
+## Her own photographs — `public/media/her/`
+
+Cut out of the four event posters on her Facebook page, plus one frame from a
+reel of her shop. **These are her pictures of her own workshops**, used on her
+own site. They are small — 400 to 810px — because a poster is all Facebook
+serves without a login. Ask her for the originals.
+
+| File | What it is |
+|---|---|
+| `chiniya.webp` | the botanical plate — the hero piece and the gallery lead |
+| `chasha-sinya.webp` | the hand-painted blue cup |
+| `momiche.webp` | a participant decorating her cup |
+| `masa-race.webp` | the shared table mid-workshop |
+| `otpechatak.webp` | leaves pressed into a clay slab |
+| `oformyane.webp` | hands shaping the clay |
+| `rabota.webp` | working at the table |
+| `magazin.webp` | the shelves in her shop |
+
 ## Pexels (free licence, no attribution required — listed for traceability)
 
-**Every photograph on the site is stock and is a placeholder.** The workshops
-are hers; these pictures are not. Replace them with photos from her own
-ceramics workshops in Гоце Делчев as soon as she sends them.
+What is left of the stock, and still a placeholder:
 
 Hero
-- pexels.com/photo/6611187/ — handmade mugs on a studio shelf (the hero ground)
-- pexels.com/photo/28509629/ — glazed cups on a wooden table (the near piece)
-- pexels.com/photo/4830752/ — a cup in a workshop (the far piece)
+- pexels.com/photo/6611187/ — mugs on a studio shelf, the hero background.
+  Hers is too small for a full-bleed background; this is the one slot where
+  stock is still doing real work.
 - pexels.com/photo/6611175/ — raw clay, used inside the word „свое“
 
 Gallery — finished ceramics

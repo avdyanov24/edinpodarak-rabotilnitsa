@@ -20,7 +20,7 @@ const b64 = async (p, mime) => `data:${mime};base64,${(await readFile(join(root,
 const [display, sans, photo, logo] = await Promise.all([
   b64('node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-normal.woff2', 'font/woff2'),
   b64('node_modules/@fontsource-variable/manrope/files/manrope-cyrillic-wght-normal.woff2', 'font/woff2'),
-  b64('public/media/piece-chashi.webp', 'image/webp'),
+  b64('public/media/her/chiniya.webp', 'image/webp'),
   b64('public/media/logo-djeilya.png', 'image/png'),
 ]);
 
@@ -60,7 +60,7 @@ const html = `<!doctype html><meta charset="utf-8">
     </div>
     <div class="foot">
       <span>Гоце Делчев</span><span class="dot"></span>
-      <span>Материалите и печенето са включени</span><span class="dot"></span>
+      <span>25 € · всичко включено</span><span class="dot"></span>
       <span>Записване онлайн</span>
     </div>
   </div>
