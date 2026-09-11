@@ -140,22 +140,66 @@ for (const [label, w, h, mob] of [['desktop 1440', 1440, 900, false], ['phone 39
   await p.close();
 }
 
-// A phone must be able to scroll past it. `touch-action: pan-y` is what allows
-// that while still letting a sideways drag draw.
+/**
+ * The phone case, driven with real touch input rather than a mouse.
+ *
+ * This is where the slab was broken: `touch-action: pan-y` meant the browser
+ * claimed any drag with a vertical component, which is every drag anybody
+ * makes, so the clay never took a mark at all. Mouse events do not exercise
+ * touch-action, so only a real touch sequence can catch it.
+ */
 {
   const p = await b.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   await p.goto(B, { waitUntil: 'networkidle' });
+  const cdp = await p.context().newCDPSession(p);
+
+  const drag = async (x, y, dx, dy, steps = 12) => {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    for (let i = 1; i <= steps; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: x + (dx * i) / steps, y: y + (dy * i) / steps }],
+      });
+      await p.waitForTimeout(16);
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await p.waitForTimeout(250);
+  };
+
   await p.locator('.clay__slab').scrollIntoViewIfNeeded();
-  await p.waitForTimeout(400);
-  ok('phone: the slab lets the page scroll through it',
-    (await p.locator('.clay__slab').evaluate((e) => getComputedStyle(e).touchAction)) === 'pan-y');
-  const before = await p.evaluate(() => scrollY);
+  await p.waitForTimeout(600);
+
+  ok('phone: the slab owns the gesture',
+    (await p.locator('.clay__slab').evaluate((e) => getComputedStyle(e).touchAction)) === 'none');
+
+  // there has to be somewhere else to put a thumb
+  const room = await p.evaluate(() => {
+    const r = document.querySelector('.clay__slab').getBoundingClientRect();
+    return Math.round(innerHeight - r.height);
+  });
+  ok('phone: there is page left to scroll from around it', room > 400, `${room}px of 844 outside the slab`);
+
+  // a drag straight down the slab must draw, not scroll
   const box = await p.locator('.clay__slab').boundingBox();
-  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await p.mouse.wheel(0, 500);
-  await p.waitForTimeout(400);
-  ok('phone: scrolling over the slab moves the page',
-    (await p.evaluate(() => scrollY)) > before);
+  const before = await p.evaluate(() => scrollY);
+  const rest = await pixels(p);
+  await drag(box.x + box.width * 0.3, box.y + box.height * 0.2, 40, box.height * 0.55);
+  const after = await pixels(p);
+  ok('phone: a finger dragged down the slab draws on it',
+    diff(rest, after) > 0.3, `Δ ${diff(rest, after).toFixed(2)}`);
+  ok('phone: and the page does not scroll out from under it',
+    (await p.evaluate(() => scrollY)) === before,
+    `moved ${(await p.evaluate(() => scrollY)) - before}px`);
+
+  // a drag that starts off the slab still scrolls the page normally
+  await p.evaluate(() => scrollTo({ top: scrollY, behavior: 'instant' }));
+  const before2 = await p.evaluate(() => scrollY);
+  await drag(box.x + box.width / 2, box.y - 60, 0, -180, 10);
+  await p.waitForTimeout(500);
+  ok('phone: dragging just above the slab still scrolls the page',
+    (await p.evaluate(() => scrollY)) > before2,
+    `moved ${(await p.evaluate(() => scrollY)) - before2}px`);
+
   await p.close();
 }
 

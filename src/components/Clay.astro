@@ -103,7 +103,12 @@
     background:
       radial-gradient(120% 100% at 30% 18%, #C98A62, transparent 62%),
       linear-gradient(160deg, #B9754F, #9A5A38 58%, #8A4E2F);
-    touch-action: pan-y;
+    /* The slab owns the gesture. `pan-y` was the cautious choice and it made
+       the thing useless on a phone: every stroke has a vertical component, so
+       the browser took the drag as a scroll and nothing was ever drawn.
+       The slab is deliberately kept to about a third of a phone screen so
+       there is always page above and below it to scroll from. */
+    touch-action: none;
     cursor: crosshair;
   }
   .clay__canvas { display: block; width: 100%; height: 100%; }
@@ -158,7 +163,9 @@
   }
 
   @media (max-width: 620px) {
-    .clay__slab { aspect-ratio: 1 / 1; border-radius: 8px; }
+    /* Shorter than square, so the slab never fills the screen: a thumb must
+       always have somewhere else to land if it wants to scroll. */
+    .clay__slab { aspect-ratio: 4 / 3; border-radius: 8px; }
     .clay__hint { font-size: 0.82rem; }
   }
 </style>
