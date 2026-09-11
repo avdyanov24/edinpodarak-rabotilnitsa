@@ -104,9 +104,12 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
     background: var(--paper-warm);
     box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 10%, transparent);
   }
+  /* 3:2, because that is the shape of her photographs. A 4:5 frame cropped
+     46% off the width of them — the handle off the blue cup, and a blurred
+     hand into the bottom of the frame where the cup used to be. */
   .card__img {
     width: 100%;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 3 / 2;
     object-fit: cover;
     display: block;
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 12%, transparent),
@@ -187,9 +190,10 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
   .card__more { font-size: var(--step--1); color: var(--moss); font-weight: 600; }
   .btn[disabled] { opacity: 0.45; pointer-events: none; }
 
-  /* A 4:5 photo inside a frame makes a very tall card on a phone. */
+  /* Slightly taller in the hand, where there is width to spare but the card
+     should still not run past a screenful. */
   @media (max-width: 620px) {
-    .card__img { aspect-ratio: 1 / 1; }
+    .card__img { aspect-ratio: 4 / 3; }
   }
 
   @media (prefers-reduced-motion: reduce) {

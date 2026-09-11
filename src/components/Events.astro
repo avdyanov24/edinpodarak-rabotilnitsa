@@ -20,7 +20,7 @@ const { events } = Astro.props;
     </header>
 
     {events.length > 0 ? (
-      <div class="ev__grid">
+      <div class="ev__grid" data-count={events.length > 2 ? "many" : String(events.length)}>
         {events.map((event, i) => <EventCard event={event} index={i} />)}
       </div>
     ) : (
@@ -59,6 +59,40 @@ const { events } = Astro.props;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
     gap: clamp(3rem, 5vw, 4.5rem) clamp(2rem, 3.5vw, 3.5rem);
+    justify-items: start;
+  }
+
+  /* Every photograph on this site was cut out of one of her Facebook posters,
+     so none is wider than about 800px and several are barely 400. A card
+     column wider than that does not make the picture bigger, it makes it
+     blurred — so the card has a ceiling and the column is allowed to be
+     wider than the card. */
+  .ev__grid > :global(.card) { max-width: 26rem; width: 100%; }
+
+  /* One workshop at a time is her normal case, and auto-fit answers that by
+     stretching the single card across the whole page: a 520px photograph
+     blown up to 1205, and the date, the place and the price pushed below
+     1500px of it. With one card the section becomes a spread instead —
+     picture on the left at a size it can actually carry, everything you need
+     to decide sitting beside it, both on the first screen. */
+  @media (min-width: 761px) {
+    .ev__grid[data-count="1"] { grid-template-columns: 1fr; }
+    .ev__grid[data-count="1"] > :global(.card) {
+      max-width: none;
+      grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+      gap: clamp(2.5rem, 5vw, 4.5rem);
+      align-items: center;
+    }
+    /* One card carrying a whole section can hold a larger voice than one of
+       three in a row; at the grid's size it read like a caption. */
+    .ev__grid[data-count="1"] :global(.card__title) { font-size: var(--step-3); }
+    .ev__grid[data-count="1"] :global(.card__meta) { font-size: var(--step-0); }
+    .ev__grid[data-count="1"] :global(.card__meta dt) { font-size: 0.78rem; width: 4.4rem; }
+    .ev__grid[data-count="1"] :global(.card__summary) {
+      font-size: var(--step-1);
+      max-width: 34ch;
+    }
+    .ev__grid[data-count="1"] :global(.card__plaque) { gap: 1.15rem; }
   }
 
   .ev__empty {

@@ -67,13 +67,16 @@ import { included } from '../data/site';
   .inc { background: var(--paper); }
   .inc__grid {
     display: grid;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1fr);
     gap: clamp(2.5rem, 5vw, 5rem);
     align-items: start;
   }
 
-  /* --- media panel --- */
-  .inc__media { position: sticky; top: 6rem; }
+  /* --- media panel ---
+     Capped, because two of the photographs behind it are only 400px wide and
+     the column was stretching them to 565. It also closes the dead space the
+     sticky panel left under the list on a tall screen. */
+  .inc__media { position: sticky; top: 6rem; max-width: 28rem; }
   .inc__stack {
     position: relative;
     aspect-ratio: 4 / 5;

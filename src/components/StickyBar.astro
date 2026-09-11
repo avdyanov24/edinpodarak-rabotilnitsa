@@ -11,7 +11,11 @@ const a = next ? availability(next.capacity, next.seats_taken, next.registration
   <div class="sticky" data-sticky hidden>
     <div class="sticky__info">
       <strong>{next.title}</strong>
-      <span>{fmtDate(next.starts_at)}, {fmtTime(next.starts_at)} ч. · {a.label}</span>
+      <span class="sticky__meta">
+        <span class="sticky__when">{fmtDate(next.starts_at)}, {fmtTime(next.starts_at)}</span>
+        <span class="sticky__dot" aria-hidden="true">·</span>
+        <span class={`sticky__seats${a.full ? ' is-full' : ''}`}>{a.label}</span>
+      </span>
     </div>
     {a.full && next.waitlist_enabled ? (
       <button class="btn btn--ghost sticky__btn" type="button" data-signup={next.id} data-waitlist="1">
@@ -30,7 +34,7 @@ const a = next ? availability(next.capacity, next.seats_taken, next.registration
     z-index: 850;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.8rem;
     padding: 0.75rem var(--gutter) calc(0.75rem + env(safe-area-inset-bottom));
     background: color-mix(in oklab, var(--paper) 94%, transparent);
     backdrop-filter: blur(14px);
@@ -43,14 +47,32 @@ const a = next ? availability(next.capacity, next.seats_taken, next.registration
   .sticky.is-up { transform: none; }
   .sticky__info { display: grid; min-width: 0; line-height: 1.3; }
   .sticky__info strong { font-family: var(--display); font-size: 1.05rem; font-weight: 500; }
-  .sticky__info span {
+  /* The line used to be one string with an ellipsis on it, and on a 390px
+     screen the part that got cut was „Свободни 8 места“ — the number that
+     makes someone tap. Splitting it lets the date give way first and keeps
+     the count whole at any width. */
+  .sticky__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    min-width: 0;
     font-size: 0.75rem;
     color: var(--muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
-  .sticky__btn { margin-inline-start: auto; flex: none; padding: 0.75em 1.4em; }
+  .sticky__when { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sticky__dot { flex: none; opacity: 0.55; }
+  .sticky__seats { flex: none; color: var(--moss); font-weight: 600; }
+  .sticky__seats.is-full { color: var(--clay-ink); }
+  .sticky__btn { margin-inline-start: auto; flex: none; padding: 0.75em 1.25em; }
+
+  /* Below about 400px the date and the count cannot share a line whatever
+     the type size, and „декември“ is longer than „септември“. Rather than cut
+     one of them, let them stack. */
+  @media (max-width: 400px) {
+    .sticky__meta { flex-wrap: wrap; row-gap: 0; }
+    .sticky__when { overflow: visible; text-overflow: clip; }
+    .sticky__dot { display: none; }
+  }
 
   @media (min-width: 861px) { .sticky { display: none; } }
 </style>

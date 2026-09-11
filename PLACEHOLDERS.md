@@ -84,6 +84,11 @@ Prices are shown in EUR, which matches her shop.
 - Do the moss workshops still happen at all? The site now says nothing about
   them; the shop link in the footer is the only trace.
 - Is „Работилница по керамика #7“ a numbering she wants shown on the site?
+- **Is there a potter's wheel?** The resting photograph in „Какво е включено“
+  is stock, and it shows someone throwing on a wheel. Everything else on the
+  site describes hand-building — „мачкаш, изтъняваш, вдигаш стените“. If the
+  workshops do not use a wheel, that picture is promising the wrong evening
+  and should be replaced with one of hers. One line in `Included.astro`.
 
 ## Backend status
 
