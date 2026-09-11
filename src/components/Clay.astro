@@ -1,0 +1,503 @@
+---
+/**
+ * A slab of clay you can actually press.
+ *
+ * The manifesto just said the clay does not want talent, it wants hands. This
+ * is the one place on the site where that stops being a claim: drag across the
+ * slab and the surface takes the mark, bevelled the way a real groove catches
+ * light, then slowly smooths itself out again. A leaf stays pressed into it,
+ * because a leaf pressed into a slab is literally one of her workshops.
+ *
+ * Everything is one canvas and about a hundred lines of script — no library,
+ * nothing to download. It draws only while it is on screen and only while
+ * something is still settling, so it costs nothing the rest of the time.
+ */
+---
+
+<section class="clay" data-clay>
+  <div class="wrap clay__in">
+    <header class="clay__head" data-reveal>
+      <p class="clay__eyebrow">Пипни я</p>
+      <h2 class="clay__title">Глината помни</h2>
+      <p class="clay__lede">
+        Прекарай пръст по нея — тя запомня всичко, после бавно се изглажда.
+        Върху истинската остава завинаги: минава през пещта с твоя отпечатък.
+      </p>
+      <a class="clay__cta" href="#rabotilnitsi">Ела и я пипни наистина →</a>
+    </header>
+
+    <figure class="clay__slab" data-reveal>
+      <canvas class="clay__canvas" data-clay-canvas aria-hidden="true"></canvas>
+      <figcaption class="clay__hint" data-clay-hint>
+        <span class="clay__hintPointer">Прекарай мишката по глината</span>
+        <span class="clay__hintTouch">Прекарай пръст по глината</span>
+      </figcaption>
+      <button class="clay__smooth" type="button" data-clay-smooth hidden>
+        Изглади
+      </button>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .clay {
+    background: var(--forest-dp);
+    color: var(--cream);
+    padding-block: clamp(3.5rem, 8vw, 6.5rem);
+    overflow: hidden;
+  }
+  .clay__in { display: grid; gap: clamp(1.8rem, 4vw, 3rem); justify-items: center; }
+
+  .clay__head { text-align: center; max-width: 34ch; }
+  .clay__cta {
+    display: inline-block;
+    margin-top: 1.4rem;
+    color: var(--lichen);
+    font-weight: 600;
+    font-size: var(--step--1);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--lichen) 40%, transparent);
+    text-underline-offset: 0.3em;
+    transition: text-decoration-color 0.35s var(--ease), color 0.35s var(--ease);
+  }
+  .clay__cta:hover { color: var(--cream); text-decoration-color: currentColor; }
+  /* Thumb-sized target on a phone, without a taller box detaching the rule
+     from the words. */
+  @media (max-width: 560px), (pointer: coarse) {
+    .clay__cta { padding-block: 0.68rem; }
+  }
+  .clay__eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--lichen);
+    margin: 0 0 0.7rem;
+  }
+  .clay__title {
+    font-size: var(--step-4);
+    line-height: 1.02;
+    margin: 0 0 0.7rem;
+    color: var(--cream);
+  }
+  .clay__lede {
+    margin: 0;
+    color: color-mix(in oklab, var(--cream) 74%, transparent);
+    text-wrap: pretty;
+  }
+
+  .clay__slab {
+    position: relative;
+    margin: 0;
+    width: min(100%, 46rem);
+    aspect-ratio: 3 / 2;
+    justify-self: stretch;
+    border-radius: 10px;
+    overflow: hidden;
+    /* A real slab is not flat: the edge catches light at the top and the
+       table shadow gathers under it. */
+    box-shadow:
+      inset 0 1px 0 rgb(255 235 214 / 0.28),
+      inset 0 -2px 6px rgb(46 22 10 / 0.4),
+      0 30px 60px -30px rgb(0 0 0 / 0.75);
+    /* Without JS this is still a plausible slab rather than an empty box. */
+    background:
+      radial-gradient(120% 100% at 30% 18%, #C98A62, transparent 62%),
+      linear-gradient(160deg, #B9754F, #9A5A38 58%, #8A4E2F);
+    touch-action: pan-y;
+    cursor: crosshair;
+  }
+  .clay__canvas { display: block; width: 100%; height: 100%; }
+
+  .clay__hint {
+    position: absolute;
+    inset: auto 0 0.9rem;
+    text-align: center;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: rgb(58 26 12 / 0.62);
+    text-shadow: 0 1px 0 rgb(255 232 210 / 0.45);
+    pointer-events: none;
+    transition: opacity 0.6s var(--ease);
+  }
+  .clay__hint.is-gone { opacity: 0; }
+  .clay__hintTouch { display: none; }
+  @media (hover: none) {
+    .clay__hintPointer { display: none; }
+    .clay__hintTouch { display: inline; }
+  }
+
+  .clay__smooth {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid rgb(58 26 12 / 0.28);
+    border-radius: 999px;
+    background: rgb(255 236 216 / 0.5);
+    color: #52240F;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s var(--ease), opacity 0.4s var(--ease);
+  }
+  .clay__smooth:hover { background: rgb(255 240 224 / 0.78); }
+  .clay__smooth[hidden] { display: none; }
+
+  /* Side by side on a laptop. Stacked, the heading and a 3:2 slab came to
+     1,024px and the invitation and the thing being offered could not be on
+     screen together — which is the whole point of the section. */
+  @media (min-width: 1000px) {
+    .clay__in {
+      grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+      align-items: center;
+      gap: clamp(2.5rem, 5vw, 4.5rem);
+    }
+    .clay__head { text-align: left; max-width: none; justify-self: start; }
+    .clay__slab { width: 100%; aspect-ratio: 4 / 3; }
+  }
+
+  @media (max-width: 620px) {
+    .clay__slab { aspect-ratio: 1 / 1; border-radius: 8px; }
+    .clay__hint { font-size: 0.82rem; }
+  }
+</style>
+
+<script>
+  const section = document.querySelector<HTMLElement>('[data-clay]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-clay-canvas]');
+  const hint = document.querySelector<HTMLElement>('[data-clay-hint]');
+  const smoothBtn = document.querySelector<HTMLButtonElement>('[data-clay-smooth]');
+  const ctx = canvas?.getContext('2d', { alpha: false });
+
+  if (section && canvas && ctx) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // The untouched slab, kept aside. Every frame nudges the visible canvas a
+    // little way back towards it, which is what makes a mark settle — and it
+    // is why the pressed leaf never fades: the leaf is part of the slab.
+    const base = document.createElement('canvas');
+    const bctx = base.getContext('2d')!;
+
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    let onScreen = false;
+    let running = false;
+    let touched = false;
+
+    /* ---------- the slab itself ---------- */
+
+    function groove(
+      c: CanvasRenderingContext2D,
+      path: (cc: CanvasRenderingContext2D) => void,
+      width: number,
+      strength = 1,
+    ) {
+      // A pressed groove is three strokes: a shadow along the edge the light
+      // misses, a highlight along the edge it catches, and the sunken floor
+      // between them.
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+
+      c.save();
+      c.translate(-1.5, -1.7);
+      c.strokeStyle = `rgba(58, 27, 12, ${0.3 * strength})`;
+      c.lineWidth = width * 1.25;
+      c.beginPath(); path(c); c.stroke();
+      c.restore();
+
+      c.save();
+      c.translate(1.6, 1.8);
+      c.strokeStyle = `rgba(255, 226, 198, ${0.26 * strength})`;
+      c.lineWidth = width * 1.15;
+      c.beginPath(); path(c); c.stroke();
+      c.restore();
+
+      c.strokeStyle = `rgba(126, 70, 43, ${0.34 * strength})`;
+      c.lineWidth = width;
+      c.beginPath(); path(c); c.stroke();
+    }
+
+    function paintBase() {
+      const g = bctx.createLinearGradient(0, 0, w, h);
+      g.addColorStop(0, '#BD7A53');
+      g.addColorStop(0.55, '#A0603C');
+      g.addColorStop(1, '#8C4F30');
+      bctx.fillStyle = g;
+      bctx.fillRect(0, 0, w, h);
+
+      const warm = bctx.createRadialGradient(w * 0.3, h * 0.18, 0, w * 0.3, h * 0.18, Math.max(w, h) * 0.8);
+      warm.addColorStop(0, 'rgba(226, 165, 124, 0.55)');
+      warm.addColorStop(1, 'rgba(226, 165, 124, 0)');
+      bctx.fillStyle = warm;
+      bctx.fillRect(0, 0, w, h);
+
+      // grog — the sand in the clay body
+      const grains = Math.round((w * h) / 1400);
+      for (let i = 0; i < grains; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const light = Math.random() > 0.5;
+        bctx.fillStyle = light
+          ? `rgba(255, 233, 207, ${Math.random() * 0.13})`
+          : `rgba(72, 36, 18, ${Math.random() * 0.14})`;
+        bctx.fillRect(x, y, 1.1, 1.1);
+      }
+
+      pressLeaf();
+    }
+
+    /** A leaf pressed into the slab — her „ботаническа чиния“, in miniature. */
+    function pressLeaf() {
+      // Sized and placed so the tip clears the edge on both the 4:3 slab and
+      // the square one a phone gets.
+      const s = Math.min(w, h) * 0.34;
+      const cx = w * 0.73;
+      const cy = h * 0.52;
+      bctx.save();
+      bctx.translate(cx, cy);
+      bctx.rotate(-0.42);
+
+      groove(bctx, (c) => {
+        c.moveTo(0, -s * 0.5);
+        c.bezierCurveTo(s * 0.42, -s * 0.2, s * 0.42, s * 0.2, 0, s * 0.5);
+        c.bezierCurveTo(-s * 0.42, s * 0.2, -s * 0.42, -s * 0.2, 0, -s * 0.5);
+      }, Math.max(2, s * 0.022), 0.85);
+
+      // midrib
+      groove(bctx, (c) => {
+        c.moveTo(0, -s * 0.5);
+        c.lineTo(0, s * 0.62);
+      }, Math.max(1.6, s * 0.017), 0.8);
+
+      // veins
+      for (let i = -3; i <= 3; i++) {
+        const t = i / 4;
+        const y = t * s * 0.4;
+        const reach = (1 - Math.abs(t) * 0.75) * s * 0.3;
+        groove(bctx, (c) => {
+          c.moveTo(0, y);
+          c.quadraticCurveTo(reach * 0.6, y + s * 0.05, reach, y + s * 0.14);
+        }, Math.max(1.2, s * 0.012), 0.6);
+        groove(bctx, (c) => {
+          c.moveTo(0, y);
+          c.quadraticCurveTo(-reach * 0.6, y + s * 0.05, -reach, y + s * 0.14);
+        }, Math.max(1.2, s * 0.012), 0.6);
+      }
+      bctx.restore();
+
+      // two old thumb marks, the way a slab always has some
+      for (const [fx, fy, r] of [[0.2, 0.3, 0.055], [0.29, 0.38, 0.042]] as const) {
+        groove(bctx, (c) => {
+          c.arc(w * fx, h * fy, Math.min(w, h) * r, 0.6, 4.2);
+        }, Math.min(w, h) * 0.02, 0.45);
+      }
+    }
+
+    function size() {
+      const r = canvas!.getBoundingClientRect();
+      if (!r.width) return;
+      // Capped: a phone at DPR 3 would otherwise be pushing four times the
+      // pixels for a surface nobody inspects that closely.
+      dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      const maxW = 1500;
+      const scale = Math.min(1, maxW / (r.width * dpr));
+      w = Math.round(r.width * dpr * scale);
+      h = Math.round(r.height * dpr * scale);
+      canvas!.width = w;
+      canvas!.height = h;
+      base.width = w;
+      base.height = h;
+      marks.width = w;
+      marks.height = h;
+      scratch.width = w;
+      scratch.height = h;
+      paintBase();
+      ctx!.drawImage(base, 0, 0);
+    }
+
+    /* ---------- pressing ---------- */
+
+    // Marks live on their own transparent layer and the whole layer fades by
+    // a float alpha. Fading the visible canvas towards the base instead — the
+    // obvious way — stalls: the canvas holds 8-bit channels, so once a pixel
+    // is within about twenty levels of the clay underneath it, 2% of the
+    // remaining difference rounds to zero and the mark freezes half-erased.
+    const marks = document.createElement('canvas');
+    const mctx = marks.getContext('2d')!;
+    const scratch = document.createElement('canvas');
+    const xctx = scratch.getContext('2d')!;
+
+    const FADE_MS = 9000;
+    let markAlpha = 0;
+    let fadeFrom = 0;
+    let stroke: { x: number; y: number }[] = [];
+    let strokeWidth = 6;
+
+    function toCanvas(e: PointerEvent) {
+      const r = canvas!.getBoundingClientRect();
+      return {
+        x: ((e.clientX - r.left) / r.width) * w,
+        y: ((e.clientY - r.top) / r.height) * h,
+      };
+    }
+
+    /**
+     * One smooth path through the points, curving through their midpoints.
+     * Drawing the groove segment by segment looked like a caterpillar — the
+     * highlight of one segment landed on the shadow of the next.
+     */
+    function strokePath(c: CanvasRenderingContext2D) {
+      const pts = stroke;
+      c.moveTo(pts[0].x, pts[0].y);
+      if (pts.length === 1) { c.lineTo(pts[0].x + 0.01, pts[0].y); return; }
+      for (let i = 1; i < pts.length - 1; i++) {
+        c.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2);
+      }
+      const lastPt = pts[pts.length - 1];
+      c.lineTo(lastPt.x, lastPt.y);
+    }
+
+    function compose() {
+      ctx!.drawImage(base, 0, 0);
+      if (markAlpha > 0.004) {
+        ctx!.globalAlpha = markAlpha;
+        ctx!.drawImage(marks, 0, 0);
+        ctx!.globalAlpha = 1;
+      }
+      if (stroke.length) groove(ctx!, strokePath, strokeWidth, 1);
+    }
+
+    /** Older marks keep the depth they had faded to; the new one starts full. */
+    function bake() {
+      if (markAlpha > 0.004) {
+        xctx.clearRect(0, 0, w, h);
+        xctx.drawImage(marks, 0, 0);
+        mctx.clearRect(0, 0, w, h);
+        mctx.globalAlpha = markAlpha;
+        mctx.drawImage(scratch, 0, 0);
+        mctx.globalAlpha = 1;
+      } else {
+        mctx.clearRect(0, 0, w, h);
+      }
+      markAlpha = 1;
+      fadeFrom = performance.now();
+    }
+
+    function begin(e: PointerEvent) {
+      bake();
+      stroke = [toCanvas(e)];
+      strokeWidth = Math.max(3, Math.min(w, h) * 0.028);
+      compose();
+      noticed();
+      start();
+    }
+
+    function extend(e: PointerEvent) {
+      const pt = toCanvas(e);
+      const prev = stroke[stroke.length - 1];
+      // Skip the jitter a mouse makes standing still; it only costs frames.
+      if (prev && Math.hypot(pt.x - prev.x, pt.y - prev.y) < w * 0.004) return;
+      stroke.push(pt);
+      if (stroke.length > 500) stroke.splice(0, 1);
+      fadeFrom = performance.now();
+      markAlpha = 1;
+      compose();
+      start();
+    }
+
+    function end() {
+      if (!stroke.length) return;
+      groove(mctx, strokePath, strokeWidth, 1);
+      stroke = [];
+      fadeFrom = performance.now();
+      markAlpha = 1;
+      compose();
+      start();
+    }
+
+    function noticed() {
+      if (touched) return;
+      touched = true;
+      hint?.classList.add('is-gone');
+      smoothBtn?.removeAttribute('hidden');
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      begin(e);
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      // A mouse presses on hover, the way a hand rests on clay. A finger has
+      // to be down, or scrolling past would scribble all over it.
+      if (e.pointerType !== 'mouse' && e.buttons === 0) { end(); return; }
+      if (!stroke.length) { begin(e); return; }
+      extend(e);
+    });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) {
+      canvas.addEventListener(ev, end);
+    }
+
+    smoothBtn?.addEventListener('click', () => {
+      stroke = [];
+      markAlpha = 0;
+      mctx.clearRect(0, 0, w, h);
+      compose();
+      smoothBtn.setAttribute('hidden', '');
+      touched = false;
+      hint?.classList.remove('is-gone');
+    });
+
+    /* ---------- settling ---------- */
+
+    function frame() {
+      if (!onScreen) { running = false; return; }
+      if (!stroke.length) {
+        markAlpha = reduce.matches
+          ? markAlpha
+          : Math.max(0, 1 - (performance.now() - fadeFrom) / FADE_MS);
+      }
+      compose();
+      if (!stroke.length && markAlpha <= 0.004) {
+        mctx.clearRect(0, 0, w, h);
+        running = false;
+        return;
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (running || !onScreen) return;
+      // With reduced motion the mark simply stays; there is nothing to animate
+      // and nothing to run.
+      if (reduce.matches && !stroke.length) { compose(); return; }
+      running = true;
+      requestAnimationFrame(frame);
+    }
+
+    new IntersectionObserver((entries) => {
+      onScreen = entries[0].isIntersecting;
+      if (onScreen) start();
+    }, { threshold: 0 }).observe(section);
+
+    let resizeTimer: number;
+    window.addEventListener('resize', () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        const before = canvas!.width;
+        size();
+        if (canvas!.width !== before) {
+          // A resize throws the marks away with the old bitmap.
+          markAlpha = 0;
+          stroke = [];
+          touched = false;
+          hint?.classList.remove('is-gone');
+          smoothBtn?.setAttribute('hidden', '');
+        }
+      }, 200);
+    });
+
+    size();
+  }
+</script>

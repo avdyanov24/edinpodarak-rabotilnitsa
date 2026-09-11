@@ -17,6 +17,9 @@ const nav = [
 ---
 
 <header class={`hdr${overlay ? '' : ' is-solid'}`} data-header data-overlay={overlay ? '1' : null}>
+  <!-- How far down a page that has no other landmarks you are. One long
+       scroll with no chapters gives no sense of length; a hairline does. -->
+  <span class="hdr__progress" data-progress aria-hidden="true"></span>
   <div class="hdr__inner wrap">
     <a class="hdr__brand" href="#top" aria-label={`${brand.name} · ${brand.owner}`}>
       <img src={u("/media/logo-djeilya.png")} alt="" width="40" height="40" />
@@ -78,6 +81,19 @@ const nav = [
   }
   .hdr.is-solid::before { opacity: 0; }
   .hdr.is-solid { text-shadow: none; }
+
+  .hdr__progress {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 2px;
+    transform: scaleX(var(--p, 0));
+    transform-origin: left;
+    background: linear-gradient(90deg, var(--moss), var(--clay));
+    opacity: 0;
+    transition: opacity 0.5s var(--ease);
+    pointer-events: none;
+  }
+  .hdr.is-solid .hdr__progress { opacity: 1; }
   .hdr__inner {
     position: relative;
     z-index: 2; /* above the open menu, so the close button stays reachable */
@@ -242,6 +258,21 @@ const nav = [
     const onScroll = () => header.classList.toggle('is-solid', window.scrollY > 40);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  const progress = document.querySelector<HTMLElement>('[data-progress]');
+  if (progress) {
+    let queued = false;
+    const paint = () => {
+      queued = false;
+      const room = document.documentElement.scrollHeight - window.innerHeight;
+      progress.style.setProperty('--p', room > 0 ? String(Math.min(1, window.scrollY / room)) : '0');
+    };
+    window.addEventListener('scroll', () => {
+      if (!queued) { queued = true; requestAnimationFrame(paint); }
+    }, { passive: true });
+    window.addEventListener('resize', paint);
+    paint();
   }
 
   /**

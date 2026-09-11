@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import Manifesto from '../components/Manifesto.astro';
+import Clay from '../components/Clay.astro';
 import Events from '../components/Events.astro';
 import Process from '../components/Process.astro';
 import Included from '../components/Included.astro';
@@ -108,6 +109,7 @@ const jsonLd = [
   <main id="main">
     <Hero next={next} />
     <Manifesto />
+    <Clay />
     <Events events={events} />
     <Process />
     <Included />
