@@ -1,11 +1,11 @@
 ---
-interface Props { capacity: number; taken: number; label: string }
-const { capacity, taken, label } = Astro.props;
+interface Props { capacity: number; taken: number; label: string; scarce?: boolean; full?: boolean }
+const { capacity, taken, label, scarce = false, full = false } = Astro.props;
 const showDots = capacity <= 18;
 const dots = showDots ? Array.from({ length: capacity }, (_, i) => i < taken) : [];
 ---
 
-<p class="seats" title={label}>
+<p class={`seats${scarce ? ' is-scarce' : ''}${full ? ' is-full' : ''}`} title={label}>
   {showDots && (
     <span class="seats__dots" aria-hidden="true">
       {dots.map((filled, i) => (
@@ -30,4 +30,16 @@ const dots = showDots ? Array.from({ length: capacity }, (_, i) => i < taken) : 
   }
   .seats__dots i.is-taken { background: var(--moss); }
   .seats__label { color: var(--muted); font-weight: 500; }
+
+  /* „Остават само 2 места“ carried exactly the weight of „Свободни 8 места“,
+     which wastes the one fact most likely to make somebody book today. The
+     flag was already computed — it just was not shown here. */
+  .seats.is-scarce .seats__label,
+  .seats.is-full .seats__label { color: var(--clay-ink); font-weight: 700; }
+  .seats.is-scarce .seats__dots i { border-color: var(--clay); }
+  .seats.is-scarce .seats__dots i.is-taken { background: var(--clay); }
+  .seats.is-full .seats__dots i {
+    border-color: color-mix(in oklab, var(--ink) 25%, transparent);
+    background: color-mix(in oklab, var(--ink) 25%, transparent);
+  }
 </style>

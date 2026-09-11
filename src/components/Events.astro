@@ -69,13 +69,20 @@ const { events } = Astro.props;
      wider than the card. */
   .ev__grid > :global(.card) { max-width: 26rem; width: 100%; }
 
+  /* Between a phone and a laptop there is not enough width for the spread —
+     it squeezed „Магазин „Джейля“, Гоце Делчев“ onto three lines — and not
+     enough content for a full-width card. One card, centred, like a poster. */
+  @media (min-width: 761px) and (max-width: 999px) {
+    .ev__grid[data-count="1"] { justify-items: center; }
+  }
+
   /* One workshop at a time is her normal case, and auto-fit answers that by
      stretching the single card across the whole page: a 520px photograph
      blown up to 1205, and the date, the place and the price pushed below
      1500px of it. With one card the section becomes a spread instead —
      picture on the left at a size it can actually carry, everything you need
      to decide sitting beside it, both on the first screen. */
-  @media (min-width: 761px) {
+  @media (min-width: 1000px) {
     .ev__grid[data-count="1"] { grid-template-columns: 1fr; }
     .ev__grid[data-count="1"] > :global(.card) {
       max-width: none;

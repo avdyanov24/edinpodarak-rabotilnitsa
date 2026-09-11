@@ -22,10 +22,18 @@ function blank(): Partial<WorkshopEvent> {
     slug: '', status: 'draft', registrations_open: true,
     title: '', summary: '', description: '', cover_image: null, gallery: [],
     starts_at: start.toISOString(), duration_minutes: 120,
-    venue_name: 'Ателие „Джейля“', venue_address: '', venue_map_url: null, city: 'Гоце Делчев',
-    price_cents: 3100, currency: 'EUR', price_note: 'Всички материали са включени.',
-    capacity: 12, seats_taken: 0, min_age: 18,
-    includes: [], bring_note: null, host_note: 'Води Джейля', waitlist_enabled: true,
+    // Her actual numbers, off her own posters — the defaults were invented
+    // ones from before the subject changed, so every new workshop started
+    // with the wrong venue, the wrong price and twelve places instead of
+    // eight, and she would have had to correct four fields every time.
+    venue_name: 'Магазин „Джейля“',
+    venue_address: 'ул. „Брегалница“ 1, Гоце Делчев',
+    venue_map_url: 'https://maps.google.com/?q=ул.+Брегалница+1,+Гоце+Делчев',
+    city: 'Гоце Делчев',
+    price_cents: 2500, currency: 'EUR', price_note: 'Всички материали са включени.',
+    capacity: 8, seats_taken: 0, min_age: 12,
+    includes: [], bring_note: null, host_note: 'Води Злата Златкова, майстор керамик',
+    waitlist_enabled: true,
   };
 }
 

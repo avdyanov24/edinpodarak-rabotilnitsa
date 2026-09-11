@@ -7,7 +7,7 @@ import SeatDots from '../../components/SeatDots.astro';
 import { getPublishedEvents } from '../../lib/events';
 import { brand } from '../../data/site';
 import {
-  fmtDateFull, fmtWeekday, fmtTime, fmtDuration, fmtPrice,
+  fmtDate, fmtDateFull, fmtWeekday, fmtTime, fmtDuration, fmtPrice,
   availability, endsAt, isoDuration,
 } from '../../lib/format';
 import { root, u } from '../../lib/url';
@@ -99,6 +99,16 @@ const jsonLd = {
             <h1 class="ev__title">{event.title}</h1>
             <p class="ev__summary">{event.summary}</p>
 
+            <!-- Most people reach this page from a link in a story, decide in
+                 a few seconds and never scroll. When, where and how much have
+                 to be on the first screen, not only in the panel below. -->
+            <ul class="ev__quick">
+              <li>{fmtWeekday(event.starts_at)}, {fmtDate(event.starts_at)}</li>
+              <li>{fmtTime(event.starts_at)} ч. · {fmtDuration(event.duration_minutes)}</li>
+              <li>{event.venue_name}, {event.city}</li>
+              <li>{fmtPrice(event.price_cents)}</li>
+            </ul>
+
             {past ? (
               <p class="ev__past">Тази работилница вече мина. Виж <a class="link" href={u("/#rabotilnitsi")}>следващите дати</a>.</p>
             ) : (
@@ -112,7 +122,7 @@ const jsonLd = {
                     Запиши се
                   </button>
                 )}
-                <SeatDots capacity={event.capacity} taken={event.seats_taken} label={a.label} />
+                <SeatDots capacity={event.capacity} taken={event.seats_taken} label={a.label} scarce={a.scarce} full={a.full} />
               </div>
             )}
           </div>
@@ -201,10 +211,13 @@ const jsonLd = {
   .ev__cta { display: grid; gap: 1.1rem; justify-items: start; }
   .ev__past { padding: 1rem 1.2rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; margin: 0; }
 
-  .ev__figure { margin: 0; }
+  /* Capped and landscape. This cover is a 520x280 crop from one of her
+     posters; a full-width 4:5 frame stretched it to 526x660 and filled the
+     first screen with a blurred hand. */
+  .ev__figure { margin: 0; max-width: 32rem; margin-inline-start: auto; }
   .ev__figure img {
     width: 100%;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 3 / 2;
     object-fit: cover;
     border-radius: 4px;
     box-shadow: 0 24px 50px -28px rgb(18 33 26 / 0.6);
@@ -242,10 +255,32 @@ const jsonLd = {
   .ev__facts dd .link { font-family: var(--sans); font-size: var(--step--1); color: var(--moss); }
   .ev__help { margin: 0; padding-top: 1.2rem; border-top: 1px solid var(--rule-soft); font-size: var(--step--1); color: var(--muted); }
 
+  .ev__quick {
+    list-style: none;
+    margin: 0 0 2rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.5rem;
+  }
+  .ev__quick li {
+    padding: 0.42rem 0.8rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--paper);
+    font-size: var(--step--1);
+    line-height: 1.3;
+  }
+  .ev__quick li:last-child {
+    border-color: color-mix(in oklab, var(--moss) 40%, transparent);
+    color: var(--moss);
+    font-weight: 600;
+  }
+
   @media (max-width: 900px) {
     .ev__heroGrid, .ev__body { grid-template-columns: 1fr; }
     .ev__side { position: static; }
-    .ev__figure { order: -1; }
+    .ev__figure { max-width: none; }
   }
 
   /* Micro-labels: readable in the hand, not just on a desktop. */

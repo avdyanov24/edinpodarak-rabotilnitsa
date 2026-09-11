@@ -22,8 +22,12 @@ const { items = faq.items } = Astro.props;
     </header>
 
     <div class="faq__items" data-faq>
-      {items.map((item) => (
-        <details class="faq__item">
+      {/* The first answer is open on arrival. It is the one that contradicts
+          what people expect — you do not take the cup home that evening — and
+          behind a closed summary nobody finds it until after they have
+          booked. */}
+      {items.map((item, i) => (
+        <details class="faq__item" open={i === 0}>
           <summary class="faq__q">
             <span class="faq__qText">{item.q}</span>
             <span class="faq__icon" aria-hidden="true"></span>

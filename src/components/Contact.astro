@@ -72,9 +72,13 @@ const others = [
         ))}
       </ul>
 
+      <!-- The address is settled now, so it is written here. Making someone
+           open an event page to find out where they would be going is a
+           friction that costs bookings. -->
       <p class="ct__where">
-        Работилниците се провеждат в <strong>{brand.city}</strong>. Точният адрес е
-        описан при всяка дата и го получаваш и в имейла за потвърждение.
+        Работилниците са в <strong>{brand.venue}, {brand.city}</strong> —
+        <a class="link" href={brand.mapUrl} target="_blank" rel="noopener">виж на картата</a>.
+        Ако някоя е на друго място, пише го при самата дата.
       </p>
     </div>
 

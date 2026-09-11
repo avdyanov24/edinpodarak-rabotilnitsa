@@ -14,7 +14,12 @@ const events = await db.adminListEvents();
 const regs = await db.adminListRegistrations();
 
 const now = Date.now();
-const upcoming = events.filter((e) => new Date(e.starts_at).getTime() >= now);
+// The database hands them back newest first, which is what the „минали“ list
+// wants and the opposite of what „предстоящи“ does: the workshop she is about
+// to run belongs at the top, not at the bottom under two drafts for December.
+const upcoming = events
+  .filter((e) => new Date(e.starts_at).getTime() >= now)
+  .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 const past = events.filter((e) => new Date(e.starts_at).getTime() < now);
 
 const waitingFor = (id: string) =>
@@ -75,6 +80,10 @@ const statusTag = (e: (typeof events)[number]) =>
                 <td class="right">
                   <a class="btn btn--ghost btn--sm" href={`/admin/zapisvaniya/${e.id}`}>Записани</a>
                   <a class="btn btn--ghost btn--sm" href={`/admin/rabotilnitsa/${e.id}`}>Промени</a>
+                  {/* She runs the same format twice a month, so „Повтори“ is
+                      as useful on a workshop that has not happened yet as on
+                      one that has. It was only offered on past ones. */}
+                  <a class="btn btn--ghost btn--sm" href={`/admin/rabotilnitsa/nova?ot=${e.id}`}>Повтори</a>
                 </td>
               </tr>
             );

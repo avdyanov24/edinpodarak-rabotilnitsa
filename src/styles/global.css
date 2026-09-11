@@ -180,6 +180,22 @@ a { color: inherit; }
 }
 .link:hover { text-decoration-color: currentColor; }
 
+/* Thumb-sized targets, once, rather than component by component — the event
+   page, both legal pages, the 404 and the cancellation page all had 18px-tall
+   links because each component had been fixed on its own and these were
+   missed.
+   `padding-block` rather than a taller box: inside a paragraph a taller box
+   would push the lines apart, while padding simply overflows the line and
+   only the hit area grows. It also keeps the underline attached to the text,
+   which a flex box does not. */
+@media (pointer: coarse) {
+  .link,
+  .ev__back,
+  .lg__back {
+    padding-block: 0.7rem;
+  }
+}
+
 /* ---------- paper grain, sits above everything ---------- */
 .grain {
   position: fixed;

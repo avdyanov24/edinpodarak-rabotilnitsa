@@ -49,9 +49,13 @@ const problems = [];
 }
 {
   const b2 = await chromium.launch({ channel: 'chrome' });
-  for (const [label, width, height] of [['desktop', 1440, 900], ['phone', 390, 844]]) {
+  // Every page, not just the home page: the event page had the same cover
+  // stretched from 520px to 526 in a 4:5 frame and nothing caught it.
+  const pages = ['/', '/rabotilnitsa/rabotilnitsa-po-keramika-17-septemvri'];
+  for (const [label, width, height] of [['desktop', 1440, 900], ['tablet', 820, 1180], ['phone', 390, 844]])
+  for (const page of pages) {
     const q = await b2.newPage({ viewport: { width, height } });
-    await q.goto('http://localhost:4321/', { waitUntil: 'networkidle' });
+    await q.goto('http://localhost:4321' + page, { waitUntil: 'networkidle' });
     await q.evaluate(async () => {
       for (let y = 0; y < document.body.scrollHeight; y += innerHeight * 0.8) {
         scrollTo(0, y); await new Promise(r => setTimeout(r, 110));
@@ -61,7 +65,7 @@ const problems = [];
     const up = await q.evaluate(() => Array.from(document.images)
       .filter((i) => i.naturalWidth && i.getBoundingClientRect().width / i.naturalWidth > 1.2)
       .map((i) => `${i.getAttribute('src')} is ${i.naturalWidth}px wide, shown at ${Math.round(i.getBoundingClientRect().width)}px`));
-    problems.push(...up.map((u) => `upscaled on ${label}: ${u}`));
+    problems.push(...up.map((u) => `upscaled on ${label}${page}: ${u}`));
     await q.close();
   }
   await b2.close();
