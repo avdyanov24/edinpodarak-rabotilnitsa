@@ -191,13 +191,49 @@ import { included } from '../data/site';
   }
 
   /* --- phone ---
-     The picture leads this section, so give it room rather than a strip; and
-     the thumbnails were small enough to read as clutter. */
+     A column of title / description / thumbnail rows is the feature list
+     every template ships with, and it read as one: six near-identical
+     stripes with the photographs shrunk to punctuation. These are objects
+     on a table, so they are laid out as objects — two to a row, photograph
+     first and big enough to recognise. */
   @media (max-width: 560px) {
     .inc__stack { aspect-ratio: 4 / 3; }
+
+    .inc__list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.6rem 0.9rem;
+    }
+    .inc__item, .inc__item:last-of-type { border: 0; }
+    .inc__underline { display: none; }
+
+    .inc__row {
+      display: grid;
+      gap: 0.5rem;
+      padding: 0;
+      text-align: left;
+    }
+    .inc__item.is-active .inc__row { padding-left: 0; }
+
+    .inc__thumb {
+      display: block;
+      order: -1;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+      border-radius: 5px;
+    }
+    .inc__thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .inc__text { gap: 0.2rem; }
+    .inc__text strong { font-size: var(--step-0); line-height: 1.25; }
+    .inc__text > span { font-size: 0.8rem; line-height: 1.45; }
+  }
+
+  /* touch devices wider than a phone keep the row, with a usable thumbnail */
+  @media (min-width: 561px) and (pointer: coarse) {
     .inc__thumb { width: 4.6rem; height: 4.6rem; border-radius: 4px; }
     .inc__row { gap: 1rem; padding-block: 1.05rem; }
-    .inc__text strong { font-size: var(--step-1); }
   }
   @media (hover: none) {
     .inc__hint { display: none; }
