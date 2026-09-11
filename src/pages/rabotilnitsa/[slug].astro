@@ -96,7 +96,7 @@ const jsonLd = {
         <div class="wrap ev__heroGrid">
           <div class="ev__heroText">
             <a class="ev__back link" href={u("/#rabotilnitsi")}>← Всички работилници</a>
-            <h1 class="ev__title">{event.title}</h1>
+            <h1 class="ev__title" style={`view-transition-name: title-${event.slug}`}>{event.title}</h1>
             <p class="ev__summary">{event.summary}</p>
 
             <!-- Most people reach this page from a link in a story, decide in
@@ -128,7 +128,12 @@ const jsonLd = {
           </div>
 
           <figure class="ev__figure">
-            <img src={u(event.cover_image)} alt={`Творба от работилницата „${event.title}“`} width="800" height="1000" />
+            <img
+              style={`view-transition-name: cover-${event.slug}`}
+              src={u(event.cover_image)}
+              alt={`Творба от работилницата „${event.title}“`}
+              width="800" height="1000"
+            />
           </figure>
         </div>
       </header>

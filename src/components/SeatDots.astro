@@ -1,45 +1,134 @@
 ---
+/**
+ * How full the workshop is, drawn as the thing it actually describes: her
+ * table, from above, with a stool for every place. A taken stool is filled in
+ * and has a cup standing on the table in front of it.
+ *
+ * This appears on the card, on the workshop page and in the booking dialog —
+ * it is the most repeated element on the site, and eight anonymous dots said
+ * nothing about where you would be sitting.
+ */
 interface Props { capacity: number; taken: number; label: string; scarce?: boolean; full?: boolean }
 const { capacity, taken, label, scarce = false, full = false } = Astro.props;
-const showDots = capacity <= 18;
-const dots = showDots ? Array.from({ length: capacity }, (_, i) => i < taken) : [];
+
+/** Above about eighteen the stools stop being distinguishable; the words carry it. */
+const showTable = capacity > 0 && capacity <= 18;
+
+/** Stools run clockwise from the top, the way you would count them yourself. */
+const seats = Array.from({ length: showTable ? capacity : 0 }, (_, i) => {
+  const angle = (i / capacity) * Math.PI * 2 - Math.PI / 2;
+  return {
+    taken: i < taken,
+    i,
+    sx: 50 + Math.cos(angle) * 40,
+    sy: 50 + Math.sin(angle) * 40,
+    // the cup sits well inside the rim, or the two rings read as one clutter
+    cx: 50 + Math.cos(angle) * 15.5,
+    cy: 50 + Math.sin(angle) * 15.5,
+  };
+});
 ---
 
-<p class={`seats${scarce ? ' is-scarce' : ''}${full ? ' is-full' : ''}`} title={label}>
-  {showDots && (
-    <span class="seats__dots" aria-hidden="true">
-      {dots.map((filled, i) => (
-        <i class={filled ? 'is-taken' : ''} style={`--i:${i}`}></i>
-      ))}
+<p class={`seats${scarce ? ' is-scarce' : ''}${full ? ' is-full' : ''}`}>
+  {showTable && (
+    <span class="seats__table" aria-hidden="true">
+      <svg viewBox="0 0 100 100" width="66" height="66" focusable="false">
+        <circle class="seats__top" cx="50" cy="50" r="26" />
+        {seats.map((s) => (
+          <>
+            {s.taken && <circle class="seats__cup" cx={s.cx} cy={s.cy} r="2.7" style={`--i:${s.i}`} />}
+            <circle
+              class={`seats__stool${s.taken ? ' is-taken' : ''}`}
+              cx={s.sx}
+              cy={s.sy}
+              r="6.6"
+              style={`--i:${s.i}`}
+            />
+          </>
+        ))}
+      </svg>
     </span>
   )}
   <span class="seats__label">{label}</span>
 </p>
 
 <style>
-  .seats { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin: 0; font-size: var(--step--1); }
-  .seats__dots { display: flex; gap: 4px; }
-  /* A filled dot is a taken stool at the table. */
-  .seats__dots i {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    border: 1.5px solid var(--moss);
-    background: transparent;
-    transition: background-color 0.4s var(--ease), transform 0.4s var(--ease-out);
-    transition-delay: calc(var(--i) * 22ms);
+  .seats {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0;
+    font-size: var(--step--1);
   }
-  .seats__dots i.is-taken { background: var(--moss); }
+  .seats__table { flex: none; line-height: 0; }
+  .seats__table svg { display: block; overflow: visible; }
+
+  /* the table top */
+  .seats__top {
+    fill: color-mix(in oklab, var(--moss) 12%, transparent);
+    stroke: color-mix(in oklab, var(--moss) 30%, transparent);
+    stroke-width: 1.4;
+  }
+
+  /* an empty stool is an outline; sitting down fills it in */
+  .seats__stool {
+    fill: transparent;
+    stroke: var(--moss);
+    stroke-width: 2;
+    transition: fill 0.45s var(--ease);
+    transition-delay: calc(var(--i) * 45ms);
+  }
+  .seats__stool.is-taken { fill: var(--moss); }
+
+  /* and puts a cup on the table in front of you */
+  .seats__cup {
+    fill: color-mix(in oklab, var(--moss) 42%, transparent);
+    transform-origin: 50px 50px;
+    transition: opacity 0.45s var(--ease);
+    transition-delay: calc(var(--i) * 45ms + 90ms);
+  }
+
   .seats__label { color: var(--muted); font-weight: 500; }
 
   /* „Остават само 2 места“ carried exactly the weight of „Свободни 8 места“,
-     which wastes the one fact most likely to make somebody book today. The
-     flag was already computed — it just was not shown here. */
+     which wastes the one fact most likely to make somebody book today. */
   .seats.is-scarce .seats__label,
   .seats.is-full .seats__label { color: var(--clay-ink); font-weight: 700; }
-  .seats.is-scarce .seats__dots i { border-color: var(--clay); }
-  .seats.is-scarce .seats__dots i.is-taken { background: var(--clay); }
-  .seats.is-full .seats__dots i {
-    border-color: color-mix(in oklab, var(--ink) 25%, transparent);
-    background: color-mix(in oklab, var(--ink) 25%, transparent);
+  .seats.is-scarce .seats__stool { stroke: var(--clay); }
+  .seats.is-scarce .seats__stool.is-taken { fill: var(--clay); }
+  .seats.is-scarce .seats__cup { fill: color-mix(in oklab, var(--clay) 45%, transparent); }
+  .seats.is-scarce .seats__top {
+    fill: color-mix(in oklab, var(--clay) 9%, transparent);
+    stroke: color-mix(in oklab, var(--clay) 34%, transparent);
+  }
+
+  /* nobody is getting in: the whole table goes quiet */
+  .seats.is-full .seats__stool {
+    stroke: color-mix(in oklab, var(--ink) 30%, transparent);
+    fill: color-mix(in oklab, var(--ink) 30%, transparent);
+  }
+  .seats.is-full .seats__cup { fill: color-mix(in oklab, var(--ink) 22%, transparent); }
+  .seats.is-full .seats__top {
+    fill: color-mix(in oklab, var(--ink) 6%, transparent);
+    stroke: color-mix(in oklab, var(--ink) 18%, transparent);
+  }
+
+  /* On the dark panels the same table has to read the other way round. */
+  :global(.dark) .seats__top,
+  :global(.su__facts) .seats__top {
+    fill: color-mix(in oklab, var(--lichen) 12%, transparent);
+    stroke: color-mix(in oklab, var(--lichen) 45%, transparent);
+  }
+  :global(.dark) .seats__stool,
+  :global(.su__facts) .seats__stool { stroke: var(--lichen); }
+  :global(.dark) .seats__stool.is-taken,
+  :global(.su__facts) .seats__stool.is-taken { fill: var(--lichen); }
+  :global(.dark) .seats__cup,
+  :global(.su__facts) .seats__cup { fill: color-mix(in oklab, var(--lichen) 60%, transparent); }
+  :global(.dark) .seats__label,
+  :global(.su__facts) .seats__label { color: color-mix(in oklab, var(--cream) 78%, transparent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .seats__stool, .seats__cup { transition: none; }
   }
 </style>

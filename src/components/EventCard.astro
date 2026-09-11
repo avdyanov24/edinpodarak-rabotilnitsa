@@ -21,6 +21,7 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
     <span class="card__mount">
       <img
         class="card__img"
+        style={`view-transition-name: cover-${event.slug}`}
         src={u(event.cover_image)}
         alt={`Творба от работилницата „${event.title}“`}
         loading={index === 0 ? 'eager' : 'lazy'}
@@ -36,7 +37,7 @@ const tilt = [-1.4, 0.9, -0.6, 1.2][index % 4];
   </a>
 
   <div class="card__plaque">
-    <h3 class="card__title">
+    <h3 class="card__title" style={`view-transition-name: title-${event.slug}`}>
       <a href={u(`/rabotilnitsa/${event.slug}`)}>{event.title}</a>
     </h3>
 

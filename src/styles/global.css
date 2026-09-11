@@ -273,3 +273,33 @@ a { color: inherit; }
   }
   .js [data-reveal] { opacity: 1; transform: none; }
 }
+
+/* ---------- moving between the list and one workshop ----------
+   The browser's own cross-document view transitions, not a client-side
+   router: the page still navigates normally, it is just animated. That
+   matters here — Astro's router would stop every component's script from
+   re-running on the way back, and the booking dialog is not worth that risk
+   for an animation. Browsers without it simply navigate. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.34s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The photograph and the title are the two things that exist on both pages,
+   so they travel instead of fading. Everything else cross-fades under them. */
+::view-transition-group(*) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The bar and the booking strip stay where they are rather than sliding in
+   from a snapshot of the old page. */
+.hdr { view-transition-name: hdr; }
+.sticky { view-transition-name: sticky; }
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
