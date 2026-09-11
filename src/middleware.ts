@@ -1,4 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
+import { isCanonicalHost } from './lib/env';
 
 /**
  * Headers every response carries.
@@ -17,6 +18,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
   h.set('Content-Security-Policy', "frame-ancestors 'none'");
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
+
+  // Only the real address is meant to be indexed. The *.vercel.app production
+  // URL is temporary and the пробна link is work in progress — if either got
+  // into Google it would sit next to her own site in the results, showing
+  // half-finished copy and dates that may since have changed. The rule is by
+  // hostname, so it stops being needed on its own the day DNS moves.
+  if (!isCanonicalHost(context.url.hostname)) {
+    h.set('X-Robots-Tag', 'noindex, nofollow');
+  }
 
   if (context.url.pathname.startsWith('/admin') || context.url.pathname.startsWith('/otkazhi')) {
     // Personal data: keep it out of a shared browser's cache, and do not hand

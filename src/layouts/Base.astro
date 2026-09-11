@@ -6,6 +6,7 @@ import '@fontsource-variable/manrope/wght.css';
 import '../styles/global.css';
 import { brand } from '../data/site';
 import { u, abs } from '../lib/url';
+import { isPreview } from '../lib/env';
 
 interface Props {
   title: string;
@@ -28,6 +29,11 @@ const home = u('/');
 const path = Astro.url.pathname.replace(/index\.html$/, '').replace(/\.html$/, '');
 const canonical = new URL(!path || path === home.replace(/\/$/, '') ? home : path, Astro.site);
 const ogImage = abs(image, Astro.site);
+
+// Two links are live at once: the one the client has, and the one the work
+// happens on. A mark in the corner of the пробна copy is what stops a change
+// being pronounced broken on the wrong one.
+const preview = isPreview();
 ---
 
 <!doctype html>
@@ -76,6 +82,12 @@ const ogImage = abs(image, Astro.site);
     <div class="grain" aria-hidden="true"></div>
     <slot />
 
+    {preview && (
+      <p class="wip" role="status">
+        <span class="wip__dot" aria-hidden="true"></span>Пробна версия
+      </p>
+    )}
+
     <script>
       // Reveal on scroll — one observer for the whole page.
       //
@@ -116,3 +128,32 @@ const ogImage = abs(image, Astro.site);
     </script>
   </body>
 </html>
+
+<style>
+  /* Only ever rendered on a preview deployment. */
+  .wip {
+    position: fixed;
+    left: max(0.75rem, env(safe-area-inset-left));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    z-index: 90;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.42rem 0.7rem;
+    border-radius: 999px;
+    background: rgb(18 33 26 / 0.82);
+    backdrop-filter: blur(6px);
+    color: #F3EFE6;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+  .wip__dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: #E2B04A;
+  }
+</style>

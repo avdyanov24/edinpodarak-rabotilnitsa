@@ -9,6 +9,16 @@
 import { chromium } from 'playwright';
 
 const B = process.env.CHECK_URL || 'http://localhost:4321';
+
+// flow.mjs fills the workshop to its last seat to reach the waiting list, and
+// leaves it that way. A sold-out event opens the dialog in waitlist form,
+// which has no places selector — so run after it, these checks would fail on
+// a dialog that is behaving perfectly. Start from a clean seed instead.
+if (B.includes('localhost')) {
+  const { rm } = await import('node:fs/promises');
+  await rm('.data/db.json', { force: true });
+  await fetch(B).catch(() => {});
+}
 const b = await chromium.launch({ channel: 'chrome' });
 const results = [];
 const ok = (n, pass, d = '') => results.push({ n, pass, d });

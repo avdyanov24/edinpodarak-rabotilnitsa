@@ -23,3 +23,18 @@ export const hasSupabase = () =>
  * lose someone's seat, the form falls back to email until Supabase is set up.
  */
 export const bookingsPersist = () => hasSupabase() || !isDeployed();
+
+/**
+ * The one hostname the site is meant to be found at. Everything else — the
+ * *.vercel.app production URL while DNS is still pending, and every preview
+ * deployment — is a working copy, and search engines are told so. Without
+ * this, the пробна version could be indexed and would compete with the real
+ * site for her own name.
+ */
+export const CANONICAL_HOST = 'rabotilnitsa.edinpodarak.com';
+
+/** A preview deployment: the link used for work in progress. */
+export const isPreview = () => env('VERCEL_ENV') === 'preview';
+
+export const isCanonicalHost = (host: string | null | undefined) =>
+  Boolean(host) && String(host).split(':')[0].toLowerCase() === CANONICAL_HOST;
