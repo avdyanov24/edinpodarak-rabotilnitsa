@@ -7,7 +7,7 @@ Bulgarian only. Intended to live at **rabotilnitsa.edinpodarak.com**.
 
 ## Handing it over
 
-[PREDAVANE.md](PREDAVANE.md) — what is live, what still blocks launch, and what
+[PREDAVANE.md](PREDAVANE.md) - what is live, what still blocks launch, and what
 was deliberately left out. In Bulgarian, so it can go to the client as is.
 [PLACEHOLDERS.md](PLACEHOLDERS.md) lists every invented word and number.
 
@@ -26,9 +26,9 @@ npm run build
 
 ```
 src/
-  data/site.ts        all page copy — becomes the `site_content` row in the CMS
+  data/site.ts        all page copy - becomes the `site_content` row in the CMS
   data/events.ts      mock events, shaped exactly like the `events` table
-  lib/events.ts       the ONLY seam to the data source — swap this for Supabase
+  lib/events.ts       the ONLY seam to the data source - swap this for Supabase
   lib/format.ts       Bulgarian dates, durations, prices, seat availability
   components/         one file per section
   pages/
@@ -60,13 +60,13 @@ node tools/contrast-check.mjs# WCAG AA on light backgrounds
 node tools/shoot.mjs         # design screenshots into shots/
 ```
 
-Run `npm run dev` in another terminal first — they all drive the dev server.
+Run `npm run dev` in another terminal first - they all drive the dev server.
 
 ## Scroll animations
 
 Reveals replay: an element re-arms once it is **completely** off screen, so the
-animation plays again on the way back down. The thresholds give it hysteresis —
-it reveals at 8% visible but only resets at 0% — so nothing fades out from under
+animation plays again on the way back down. The thresholds give it hysteresis -
+it reveals at 8% visible but only resets at 0% - so nothing fades out from under
 a reader who is still on it. `REPLAY` in `src/layouts/Base.astro` switches the
 whole page back to one-way reveals.
 
@@ -76,7 +76,7 @@ back into view.
 
 Anything that starts hidden for an animation is scoped to `html.js`, set by an
 inline script before first paint, so a blocked script leaves a readable page.
-Write those rules as `:global(html.js) .thing` — Astro scopes a bare `.js`
+Write those rules as `:global(html.js) .thing` - Astro scopes a bare `.js`
 ancestor to the component and it will silently never match.
 
 ## Data
@@ -88,7 +88,7 @@ Two interchangeable backends behind one interface (`src/lib/db/`):
   panel are fully usable before the Supabase project exists
 
 Both implement `src/lib/db/types.ts`. The local one deliberately mirrors the SQL
-semantics of `register_for_event` and `cancel_registration` — change one, change
+semantics of `register_for_event` and `cancel_registration` - change one, change
 the other.
 
 Schema, booking function, RLS and retention live in `supabase/migrations/`.
@@ -108,12 +108,12 @@ Bulgarian, at `/admin`.
 
 Sign-in checks the password against Supabase Auth when configured, otherwise
 against `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Either way the browser only ever gets
-our own signed, 12-hour session cookie — no Supabase tokens.
+our own signed, 12-hour session cookie - no Supabase tokens.
 
 ## Rendering
 
-The legal pages are prerendered. Everything that reads the database — the home
-page, event pages, the sitemap, `/api`, `/admin` — is rendered on demand, so a
+The legal pages are prerendered. Everything that reads the database - the home
+page, event pages, the sitemap, `/api`, `/admin` - is rendered on demand, so a
 workshop published in the panel is live immediately rather than at the next
 deploy. Public pages send `max-age=60, stale-while-revalidate=600`.
 
@@ -125,13 +125,13 @@ and the domain are in [VERCEL.md](VERCEL.md).
 
 DNS for `edinpodarak.com` sits at Jump.bg (`ns1/ns2.jumphosting01.com`), not at
 Sellavi, so the subdomain is a single CNAME. Nothing in the build depends on the
-final hostname — it runs on the `*.vercel.app` URL until DNS is sorted.
+final hostname - it runs on the `*.vercel.app` URL until DNS is sorted.
 
 ### No database, no bookings
 
 `bookingsPersist()` in `src/lib/env.ts` answers one question: would a booking
 taken right now still be there tomorrow? Supabase always would. The file-backed
-stand-in only would when there is a real disk under it — on Vercel there is
+stand-in only would when there is a real disk under it - on Vercel there is
 not, since the filesystem is read-only apart from `/tmp`, which belongs to a
 single instance and is thrown away.
 
@@ -146,13 +146,13 @@ booking turns itself on. No code changes.
 
 ### Static export
 
-`npm run build:pages` still produces a serverless static copy — the public
+`npm run build:pages` still produces a serverless static copy - the public
 pages only, no `/api`, `/admin` or `/otkazhi`, sign-up falling back to email.
 It is not deployed anywhere; it exists as a preview build. Two things about it
 worth knowing before touching it:
 
 - **Astro reads `export const prerender` as literal source text**, before Vite
-  runs. An env flag or a variable there does not work — it silently prerenders
+  runs. An env flag or a variable there does not work - it silently prerenders
   everything, which on the real deploy means a workshop published in the panel
   never appears. So `tools/build-pages.mjs` flips the literal on disk for the
   length of the build and puts it back in a `finally`.

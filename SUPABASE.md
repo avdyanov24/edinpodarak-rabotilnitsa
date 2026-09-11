@@ -2,7 +2,7 @@
 
 **Already done.** The project exists, the migrations are applied, the demo
 workshops are seeded and the live site books through it. `tools/setup-supabase.mjs`
-did all of it and is safe to re-run — use it to rebuild the project from
+did all of it and is safe to re-run - use it to rebuild the project from
 scratch, or to re-apply the migrations after changing them.
 
 ```bash
@@ -83,14 +83,14 @@ the panel, or, once she has confirmed the real details, insert them with SQL.
 Bookings work without it; people just do not get a confirmation.
 
 1. resend.com → add the domain `mail.edinpodarak.com`
-2. Add the SPF/DKIM records it gives you at Jump.bg — a subdomain, so her
+2. Add the SPF/DKIM records it gives you at Jump.bg - a subdomain, so her
    existing mail is untouched
 3. Set `RESEND_API_KEY`, `MAIL_FROM`, `OWNER_EMAIL`
 
 ## 8. Retention
 
 The privacy notice promises registrations are deleted 12 months after the
-workshop. Turn that promise on — Database → Extensions → enable `pg_cron`, then:
+workshop. Turn that promise on - Database → Extensions → enable `pg_cron`, then:
 
 ```sql
 select cron.schedule(
@@ -102,7 +102,7 @@ select cron.schedule(
 ## Verifying it, rather than assuming it
 
 `tools/rls-check.mjs` attacks the live database with the **publishable (anon)
-key** — the one designed to be safe in a browser — and requires that it cannot
+key** - the one designed to be safe in a browser - and requires that it cannot
 read a registration, write one, edit or delete a workshop, call the booking
 function, or rewrite the site content, while still being able to read seat
 counts. Run it after any change to the policies:
@@ -115,7 +115,7 @@ It earned its keep immediately: **`revoke ... from public` was not enough.**
 Supabase sets default privileges that grant `EXECUTE` on every new function to
 `anon` and `authenticated` *explicitly*, and an explicit grant survives a
 revoke from `PUBLIC`. `register_for_event` is `security definer`, so anyone
-holding the publishable key could book seats straight past the API — past the
+holding the publishable key could book seats straight past the API - past the
 rate limit, the honeypot and every validation rule. The migrations now revoke
 from `anon, authenticated` as well.
 
@@ -129,7 +129,7 @@ site and checks the seat count actually moved.
   key, ever. They are reachable only through the authenticated panel.
 - **Bookings go through `register_for_event`**, which is `security definer`
   and takes a row lock on the event. Two people taking the last seat at the
-  same moment is serialised — the second becomes a waiting-list entry.
+  same moment is serialised - the second becomes a waiting-list entry.
   This is covered by `node tools/sql-test.mjs`, which fires ten concurrent
   bookings at four free seats against a real Postgres.
 - **Seat counts are exposed as an aggregate**, never as rows, so the public

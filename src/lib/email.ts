@@ -73,7 +73,7 @@ export function confirmationEmail(
         <tr><td style="padding-right:14px;color:#5C6B60">Работилница</td><td><strong>${event.title}</strong></td></tr>
         <tr><td style="padding-right:14px;color:#5C6B60">Кога</td><td>${when(event)}</td></tr>
         <tr><td style="padding-right:14px;color:#5C6B60">Къде</td><td>${event.venue_name}, ${event.venue_address}</td></tr>
-        <tr><td style="padding-right:14px;color:#5C6B60">Цена</td><td>${fmtPrice(event.price_cents)} — плащаш на място</td></tr>
+        <tr><td style="padding-right:14px;color:#5C6B60">Цена</td><td>${fmtPrice(event.price_cents)} - плащаш на място</td></tr>
       </table>
       ${event.bring_note ? `<p style="font-size:15px;line-height:1.6">${event.bring_note}</p>` : ''}
       <p style="font-size:13px;color:#5C6B60">

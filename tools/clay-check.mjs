@@ -72,6 +72,29 @@ for (const [label, w, h, mob] of [['desktop 1440', 1440, 900, false], ['phone 39
       return max - min > 30;
     }));
 
+  // Canvas does not wait for webfonts, so a missing repaint after they load
+  // leaves her name pressed in whatever serif the browser had to hand — or,
+  // if paintBase never reran, nothing legible at all.
+  ok(`${label}: her name is pressed into the bottom-left`,
+    await p.evaluate(() => {
+      const c = document.querySelector('[data-clay-canvas]');
+      const x = Math.round(c.width * 0.06);
+      const y = Math.round(c.height * 0.6);
+      const d = c.getContext('2d').getImageData(x, y, Math.round(c.width * 0.46), Math.round(c.height * 0.32)).data;
+      let min = 255; let max = 0;
+      for (let i = 0; i < d.length; i += 4) { if (d[i] < min) min = d[i]; if (d[i] > max) max = d[i]; }
+      return max - min;
+    }) > 24,
+    `contrast range ${await p.evaluate(() => {
+      const c = document.querySelector('[data-clay-canvas]');
+      const x = Math.round(c.width * 0.06);
+      const y = Math.round(c.height * 0.6);
+      const d = c.getContext('2d').getImageData(x, y, Math.round(c.width * 0.46), Math.round(c.height * 0.32)).data;
+      let min = 255; let max = 0;
+      for (let i = 0; i < d.length; i += 4) { if (d[i] < min) min = d[i]; if (d[i] > max) max = d[i]; }
+      return max - min;
+    })}`);
+
   ok(`${label}: the hint is showing and „Изглади“ is not`,
     !(await p.locator('[data-clay-hint]').evaluate((e) => e.classList.contains('is-gone')))
     && await p.locator('[data-clay-smooth]').evaluate((e) => e.hasAttribute('hidden')));

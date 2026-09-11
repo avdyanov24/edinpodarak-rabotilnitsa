@@ -249,8 +249,8 @@ const startsLocal = isoToLocalInput(event.starts_at ?? new Date().toISOString())
       <div class="field">
         <label for="status">Статус</label>
         <select id="status" name="status">
-          <option value="draft" selected={event.status === 'draft'}>Чернова — не се вижда</option>
-          <option value="published" selected={event.status === 'published'}>Публикувана — вижда се на сайта</option>
+          <option value="draft" selected={event.status === 'draft'}>Чернова - не се вижда</option>
+          <option value="published" selected={event.status === 'published'}>Публикувана - вижда се на сайта</option>
           <option value="cancelled" selected={event.status === 'cancelled'}>Отменена</option>
         </select>
       </div>

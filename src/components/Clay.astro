@@ -20,7 +20,7 @@
       <p class="clay__eyebrow">Пипни я</p>
       <h2 class="clay__title">Глината помни</h2>
       <p class="clay__lede">
-        Прекарай пръст по нея — тя запомня всичко, после бавно се изглажда.
+        Прекарай пръст по нея - тя запомня всичко, после бавно се изглажда.
         Върху истинската остава завинаги: минава през пещта с твоя отпечатък.
       </p>
       <a class="clay__cta" href="#rabotilnitsi">Ела и я пипни наистина →</a>
@@ -226,6 +226,57 @@
       c.beginPath(); path(c); c.stroke();
     }
 
+    /**
+     * The same three passes as `groove`, but for letters: a potter signs the
+     * base of a piece by pressing into it, so her name is engraved rather
+     * than painted on.
+     */
+    function grooveText(
+      c: CanvasRenderingContext2D,
+      text: string,
+      x: number,
+      y: number,
+      size: number,
+      strength = 1,
+    ) {
+      c.font = `italic 400 ${size}px "Playfair Display", Georgia, serif`;
+      c.textAlign = 'left';
+      c.textBaseline = 'alphabetic';
+
+      c.fillStyle = `rgba(58, 27, 12, ${0.32 * strength})`;
+      c.fillText(text, x - 1.5, y - 1.7);
+      c.fillStyle = `rgba(255, 226, 198, ${0.3 * strength})`;
+      c.fillText(text, x + 1.6, y + 1.8);
+      c.fillStyle = `rgba(126, 70, 43, ${0.3 * strength})`;
+      c.fillText(text, x, y);
+    }
+
+    /** Her name, pressed in the way a maker signs a piece before it dries. */
+    function pressName() {
+      const text = 'Джейля';
+      // Sized by measuring rather than guessing: the same fraction of the
+      // smaller side came out delicate on a laptop and half the width of the
+      // slab on a phone.
+      const target = w * 0.36;
+      let size = target / 2.6;
+      bctx.font = `italic 400 ${size}px "Playfair Display", Georgia, serif`;
+      const measured = bctx.measureText(text).width || target;
+      size *= target / measured;
+      const width = target;
+
+      bctx.save();
+      bctx.translate(w * 0.09, h * 0.78);
+      bctx.rotate(-0.045);
+      grooveText(bctx, text, 0, 0, size, 0.95);
+
+      // the short rule a signature usually sits on
+      groove(bctx, (c) => {
+        c.moveTo(size * 0.04, size * 0.3);
+        c.lineTo(width * 0.96, size * 0.3);
+      }, Math.max(1.4, size * 0.035), 0.45);
+      bctx.restore();
+    }
+
     function paintBase() {
       const g = bctx.createLinearGradient(0, 0, w, h);
       g.addColorStop(0, '#BD7A53');
@@ -253,15 +304,16 @@
       }
 
       pressLeaf();
+      pressName();
     }
 
     /** A leaf pressed into the slab — her „ботаническа чиния“, in miniature. */
     function pressLeaf() {
       // Sized and placed so the tip clears the edge on both the 4:3 slab and
       // the square one a phone gets.
-      const s = Math.min(w, h) * 0.34;
-      const cx = w * 0.73;
-      const cy = h * 0.52;
+      const s = Math.min(w, h) * 0.31;
+      const cx = w * 0.76;
+      const cy = h * 0.44;
       bctx.save();
       bctx.translate(cx, cy);
       bctx.rotate(-0.42);
@@ -294,8 +346,8 @@
       }
       bctx.restore();
 
-      // two old thumb marks, the way a slab always has some
-      for (const [fx, fy, r] of [[0.2, 0.3, 0.055], [0.29, 0.38, 0.042]] as const) {
+      // an old thumb mark, the way a slab always has one
+      for (const [fx, fy, r] of [[0.21, 0.26, 0.05]] as const) {
         groove(bctx, (c) => {
           c.arc(w * fx, h * fy, Math.min(w, h) * r, 0.6, 4.2);
         }, Math.min(w, h) * 0.02, 0.45);
@@ -508,5 +560,12 @@
     });
 
     size();
+
+    // Canvas does not wait for webfonts: without this the signature is pressed
+    // in Georgia and then never corrected.
+    document.fonts?.load('italic 400 40px "Playfair Display"').then(() => {
+      paintBase();
+      compose();
+    }).catch(() => {});
   }
 </script>
