@@ -11,7 +11,8 @@
 
 | | |
 |---|---|
-| Сайт | https://edinpodarak-rabotilnitsa.vercel.app |
+| Сайт (за клиента) | https://edinpodarak-rabotilnitsa.vercel.app |
+| Проба (за работа) | https://rabotilnitsa-proba.vercel.app — клон `staging`, не се вижда от клиента |
 | Панел | /admin — влизането е през Supabase Auth |
 | Код | github.com/avdyanov24/edinpodarak-rabotilnitsa |
 | Хостинг | Vercel, безплатен план, публикува се сам при всяко бутане в `main` |

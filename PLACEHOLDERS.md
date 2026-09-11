@@ -33,17 +33,31 @@ are no longer guesses:
   си създал.“* It is lightly adapted. If she would rather it stayed hers alone,
   it is one line to change.
 
-### One conflict to settle
+### Settled by her
 
-Her posters say **ул. „Брегалница“ 1**. The place tag on her Facebook events
-says **ул. Брегалница 3**. The site uses **1**, from the posters. Ask her.
+- **ул. „Брегалница“ 1, гр. Гоце Делчев.** She confirmed it in writing; the
+  place tag on her Facebook events said 3, and it was wrong. She typed
+  „Брегалница 1ц“ — read as a slip for „1,“. If it is really 1В or similar,
+  it is one line in `src/data/events.ts`.
+- **25 €** — confirmed.
+- **Гоце Делчев** — confirmed.
+- **The next workshop: четвъртък, 17 септември, 18:00.** It is live on the
+  site and open for booking.
+
+### Only one workshop is published
+
+The other two are **drafts**. Invented dates that people could actually book
+had to come off — someone turning up to a workshop that was never scheduled is
+a real harm, not a cosmetic one. They stay in the panel with their photos and
+descriptions ready, so giving one a date and pressing „Публикувана“ takes
+under a minute.
 
 ## Invented — must be confirmed
 
 | Where | What is made up |
 |---|---|
-| `src/data/events.ts` | **The dates and times.** The three on her posters — 1 август, 6 август, 28 август — have all passed, so the ones on the site are invented future dates |
-| `src/data/events.ts` | The seat counts (how many are already taken) |
+| `src/data/events.ts` | The dates on the two **drafts**. They are past formats of hers, kept in the panel with invented dates so she can reuse them — they are not on the site |
+| `src/data/events.ts` | The title of the 17 September workshop. She gave the date but not which format, so it is called plainly „Работилница по керамика“ — the words her own posters use |
 | `src/data/site.ts` | **That the piece is collected later.** Clay has to dry and be fired twice, so the site says she writes when it is ready. Standard for ceramics, but confirm how long it takes and whether people collect or she posts them |
 | `src/data/site.ts` | The four steps of „Как протича“ and the clock times on them |
 | `src/data/site.ts` | Everything under „Какво е включено“, including that glazing and both firings are in the price |

@@ -1,6 +1,19 @@
-/** End-to-end check of the booking flow, with screenshots as evidence. */
+/**
+ * End-to-end check of the booking flow, with screenshots as evidence.
+ *
+ * It books, and it fills a workshop to the last seat to reach the waiting
+ * list — so it starts from a clean seed, or the second run would find nothing
+ * left to book. Only ever against the local file store; it will not touch a
+ * deployed database.
+ */
 import { chromium } from 'playwright';
+import { rm } from 'node:fs/promises';
+
 const base = 'http://localhost:4321';
+if (base.includes('localhost')) {
+  await rm('.data/db.json', { force: true });
+  await fetch(base).catch(() => {});   // reseeds from src/data/events.ts
+}
 const out = 'shots';
 const browser = await chromium.launch({ channel: 'chrome' });
 const results = [];
@@ -14,7 +27,7 @@ await page.locator('[data-signup]').first().click();
 await page.waitForTimeout(600);
 ok('dialog opens', await page.locator('[data-signup-dialog]').isVisible());
 ok('dialog shows the right event',
-  (await page.locator('[data-su-title]').innerText()).includes('Глина и лимонада'),
+  (await page.locator('[data-su-title]').innerText()).includes('Работилница по керамика'),
   await page.locator('[data-su-title]').innerText());
 ok('seats shown in dialog', /места|място/.test(await page.locator('[data-su-seats]').innerText()),
   await page.locator('[data-su-seats]').innerText());
@@ -103,10 +116,37 @@ ok('faq keeps only one answer open',
   (await page.locator('.faq__item[open]').count()) === 1,
   `${await page.locator('.faq__item[open]').count()} open`);
 
-// ---------- waitlist on the sold-out event ----------
+// ---------- waitlist on a sold-out event ----------
+// Fill the workshop by writing the local store directly. Booking eight seats
+// through /api/register would trip its own rate limit — which is the limiter
+// doing its job, not something to work around by loosening it.
+{
+  const { readFile, writeFile } = await import('node:fs/promises');
+  const { randomUUID } = await import('node:crypto');
+  let db;
+  try {
+    db = JSON.parse(await readFile('.data/db.json', 'utf8'));
+  } catch {
+    await page.request.get(`${base}/`);       // force a seed
+    db = JSON.parse(await readFile('.data/db.json', 'utf8').catch(() => 'null'));
+  }
+  if (db) {
+    const ev = db.events.find((e) => e.status === 'published');
+    const taken = db.registrations.filter((r) => r.event_id === ev.id && r.status === 'confirmed').length;
+    for (let i = taken; i < ev.capacity; i++) {
+      db.registrations.push({
+        id: randomUUID(), event_id: ev.id, full_name: `Пълнеж ${i + 1} (тест)`,
+        email: `pylnezh${i + 1}@example.com`, phone: '0888000000', people_count: 1,
+        note: null, status: 'confirmed', consent_at: new Date().toISOString(),
+        cancel_token: randomUUID(), created_at: new Date().toISOString(),
+      });
+    }
+    await writeFile('.data/db.json', JSON.stringify(db, null, 2));
+  }
+}
 await page.reload({ waitUntil: 'networkidle' });
 const wl = page.locator('[data-waitlist="1"]').first();
-ok('sold-out card offers a waitlist', await wl.count() > 0);
+ok('a sold-out workshop offers a waitlist', await wl.count() > 0);
 if (await wl.count()) {
   await wl.scrollIntoViewIfNeeded();
   await wl.click();
@@ -131,8 +171,8 @@ await m.close();
 
 // ---------- event page ----------
 const e = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-await e.goto(`${base}/rabotilnitsa/napravi-svoya-keramichna-chasha-noemvri`, { waitUntil: 'networkidle' });
-ok('event page renders', (await e.locator('h1').innerText()).includes('керамична чаша'));
+await e.goto(`${base}/rabotilnitsa/rabotilnitsa-po-keramika-17-septemvri`, { waitUntil: 'networkidle' });
+ok('event page renders', (await e.locator('h1').innerText()).includes('Работилница по керамика'));
 const ld = await e.locator('script[type="application/ld+json"]').innerText();
 const parsed = JSON.parse(ld);
 ok('Event JSON-LD present', parsed['@type'] === 'Event', `${parsed['@type']} / ${parsed.startDate}`);

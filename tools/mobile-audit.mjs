@@ -7,7 +7,7 @@
 import { chromium } from 'playwright';
 
 const B = process.env.CHECK_URL || 'http://localhost:4321';
-const PAGES = ['/', '/rabotilnitsa/glina-i-limonada-oktomvri', '/poveritelnost', '/usloviya', '/nyama-takava', '/admin/vhod'];
+const PAGES = ['/', '/rabotilnitsa/rabotilnitsa-po-keramika-17-septemvri', '/poveritelnost', '/usloviya', '/nyama-takava', '/admin/vhod'];
 const SIZES = [['iPhone', 390, 844], ['small', 360, 740], ['landscape', 844, 390]];
 
 const b = await chromium.launch({ channel: 'chrome' });

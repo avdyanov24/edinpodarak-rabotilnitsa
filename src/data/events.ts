@@ -3,8 +3,9 @@
  * runs without Supabase, and as the demo data for the client walk-through.
  * Once Supabase is connected this file is no longer read at runtime.
  *
- * The three titles are her real Facebook events. The dates, prices,
- * durations and capacities are placeholders — see PLACEHOLDERS.md.
+ * The first workshop is real: 17 September 2026, 18:00, confirmed by her.
+ * The other two are past formats of hers kept as drafts — they are not
+ * visible on the site until she gives them dates. See PLACEHOLDERS.md.
  */
 import type { WorkshopEvent } from '../lib/db/types';
 
@@ -15,16 +16,16 @@ export const seedEvents: WorkshopEvent[] = [
     id: '11111111-1111-4111-8111-111111111111',
     gallery: [],
     currency: 'EUR',
-    slug: 'glina-i-limonada-oktomvri',
+    slug: 'rabotilnitsa-po-keramika-17-septemvri',
     status: 'published',
     registrations_open: true,
-    title: 'Глина и лимонада',
+    title: 'Работилница по керамика',
     summary:
       'Два вечерни часа с буца глина, чаша домашна лимонада и маса, на която никой не бърза.',
     description:
       'Започваме с глината — каква е на пипане, докъде се разтяга и защо прощава. После всеки сяда пред своята буца: оформяш чаша, изтъняваш стените, правиш дръжката. Минавам покрай всеки и помагам, но формата си е изцяло твоя. Накрая избираш глеч и оставяш чашата при мен — глината минава два пъти през пещта и си я вземаш, щом е готова.',
     cover_image: '/media/her/chasha-sinya.webp',
-    starts_at: '2026-10-16T19:00:00+03:00',
+    starts_at: '2026-09-17T18:00:00+03:00',
     duration_minutes: 120,
     venue_name: 'Магазин „Джейля“',
     venue_address: 'ул. „Брегалница“ 1, Гоце Делчев',
@@ -33,7 +34,7 @@ export const seedEvents: WorkshopEvent[] = [
     price_cents: 2500,
     price_note: 'Всичко е включено — материали, изпичане и домашна лимонада.',
     capacity: 8,
-    seats_taken: 5,
+    seats_taken: 0,
     min_age: 12,
     includes: [
       'Работилница със Злата Златкова',
@@ -50,8 +51,8 @@ export const seedEvents: WorkshopEvent[] = [
     id: '22222222-2222-4222-8222-222222222222',
     gallery: [],
     currency: 'EUR',
-    slug: 'napravi-svoya-keramichna-chasha-noemvri',
-    status: 'published',
+    slug: 'napravi-svoya-keramichna-chasha',
+    status: 'draft',
     registrations_open: true,
     title: 'Направи своя керамична чаша',
     summary:
@@ -68,7 +69,7 @@ export const seedEvents: WorkshopEvent[] = [
     price_cents: 2500,
     price_note: 'Всичко е включено — материали, изпичане и домашна лимонада.',
     capacity: 8,
-    seats_taken: 2,
+    seats_taken: 0,
     min_age: 12,
     includes: [
       'Работилница със Злата Златкова',
@@ -85,8 +86,8 @@ export const seedEvents: WorkshopEvent[] = [
     id: '33333333-3333-4333-8333-333333333333',
     gallery: [],
     currency: 'EUR',
-    slug: 'botanicheska-chiniya-dekemvri',
-    status: 'published',
+    slug: 'botanicheska-chiniya',
+    status: 'draft',
     registrations_open: true,
     title: 'Природа, глина, лимонада',
     summary:
@@ -103,7 +104,7 @@ export const seedEvents: WorkshopEvent[] = [
     price_cents: 2500,
     price_note: 'Всичко е включено — материали, изпичане и домашна лимонада.',
     capacity: 8,
-    seats_taken: 8,
+    seats_taken: 0,
     min_age: 12,
     includes: [
       'Работилница със Злата Златкова',
