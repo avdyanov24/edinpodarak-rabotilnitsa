@@ -30,6 +30,10 @@ const blocked = (error, data) => Boolean(error) || !data || data.length === 0;
 }
 
 // --- events ---
+// What anon could see before any of the attempts below, to compare with
+// afterwards. It is however many workshops are published today, not a fixed
+// number - the check is that nothing changed, not how many there are.
+const { data: before } = await sb.from('events').select('slug,title');
 {
   const { data } = await sb.from('events').select('slug,status');
   ok('only published workshops are visible',
@@ -81,9 +85,9 @@ const blocked = (error, data) => Boolean(error) || !data || data.length === 0;
 // And nothing above actually altered anything.
 {
   const { data } = await sb.from('events').select('slug,title');
-  const stolen = (data ?? []).some((e) => e.title === 'Присвоено');
-  ok('the workshops are still intact after all of that', !stolen && (data ?? []).length === 3,
-     `${data?.length ?? 0} workshops, titles unchanged: ${!stolen}`);
+  const same = JSON.stringify(data) === JSON.stringify(before);
+  ok('the workshops are still intact after all of that', same,
+     `${data?.length ?? 0} workshops, unchanged: ${same}`);
 }
 
 for (const r of results) console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.n}${r.d ? '  — ' + r.d : ''}`);

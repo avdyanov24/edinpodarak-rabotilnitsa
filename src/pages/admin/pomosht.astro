@@ -255,9 +255,21 @@ const live = (r: { revoked_at: string | null; expires_at: string }) =>
     border-radius: 6px;
     font-size: 0.9rem;
   }
+  /* .help li caps body text at 60ch; these are rows, not prose. */
+  .sess__row { max-width: none; }
   .sess__row.is-me { border-color: #BBD3B4; background: #F4F8F2; }
-  .sess__dev { font-weight: 600; }
+  .sess__dev { grid-column: 1; font-weight: 600; }
   .sess__meta { grid-column: 1; color: var(--muted); font-size: 0.82rem; }
-  .sess__state { grid-row: 1 / span 2; align-self: center; color: var(--muted); font-size: 0.82rem; }
+  .sess__state {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  @media (max-width: 520px) {
+    .sess__row { grid-template-columns: 1fr; }
+    .sess__state { grid-column: 1; grid-row: auto; }
+  }
   .sess__form { margin-bottom: 0.9rem; }
 </style>
