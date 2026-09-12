@@ -188,18 +188,32 @@ export const gallery = {
 /** TODO: заменѝ с истински отзиви от участници. */
 export const testimonials = {
   eyebrow: 'Отзиви',
-  title: 'Какво казват след това',
+  title: 'Какво казват за Джейля',
   /**
-   * Empty on purpose.
+   * Real, and only real.
    *
-   * There were three here and all three were invented - plausible sentences
-   * that nobody said. On a page selling an evening with a person, that is the
-   * one lie that would cost her something real, so they are gone rather than
-   * dressed up with a disclaimer. The section renders nothing at all while
-   * this is empty; the moment she pastes a real one into Съдържание, it comes
-   * back with it.
+   * There were three invented ones here. What replaced them is what actually
+   * exists: her Google listing has five reviews and one of them has words in
+   * it. The second one with words was written by Злата - the person who leads
+   * the workshops - so it is not a customer's and is not here.
+   *
+   * The note says out loud that these are about the shop, because a quote
+   * about her workmanship under a heading about the workshop would be the
+   * same lie in a quieter voice.
    */
-  items: [] as { quote: string; name: string; detail: string }[],
+  note: 'Отзивите са от Google и са за магазина. За работилниците тепърва ще се съберат.',
+  source: {
+    label: '5,0 от 5 в Google',
+    detail: '5 отзива',
+    href: 'https://maps.google.com/?cid=1243788518057972915',
+  },
+  items: [
+    {
+      quote: 'Перфектна изработка и добро качество. Винаги ще ви посрещнат с усмивка.',
+      name: 'Хайсел Арнаудова',
+      detail: 'отзив в Google',
+    },
+  ],
 };
 
 export const faq = {

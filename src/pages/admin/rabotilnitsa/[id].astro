@@ -28,7 +28,10 @@ function blank(): Partial<WorkshopEvent> {
     // eight, and she would have had to correct four fields every time.
     venue_name: 'Магазин „Джейля“',
     venue_address: 'ул. „Брегалница“ 1, Гоце Делчев',
-    venue_map_url: 'https://maps.google.com/?q=ул.+Брегалница+1,+Гоце+Делчев',
+    // Her own Google listing rather than a text search: it opens the shop
+    // with its opening hours and directions, whatever the street number
+    // turns out to be.
+    venue_map_url: 'https://maps.google.com/?cid=1243788518057972915',
     city: 'Гоце Делчев',
     price_cents: 2500, currency: 'EUR', price_note: 'Всички материали са включени.',
     capacity: 8, seats_taken: 0, min_participants: 3, min_age: 12,

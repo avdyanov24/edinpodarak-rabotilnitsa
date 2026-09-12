@@ -2,8 +2,8 @@
 import { testimonials } from '../data/site';
 import type { Testimonial } from '../lib/content';
 
-interface Props { items?: Testimonial[] }
-const { items = testimonials.items } = Astro.props;
+interface Props { items?: Testimonial[]; fromGoogle?: boolean }
+const { items = testimonials.items, fromGoogle = true } = Astro.props;
 
 // Never render an empty wall of quotes: see the note in src/data/site.ts.
 if (items.length === 0) return new Response(null, { status: 204 });
@@ -13,6 +13,16 @@ if (items.length === 0) return new Response(null, { status: 204 });
   <div class="wrap">
     <header class="tm__head">
       <h2 class="tm__title">{testimonials.title}</h2>
+      {fromGoogle && (
+        <>
+          <p class="tm__note">{testimonials.note}</p>
+          <a class="tm__source" href={testimonials.source.href} target="_blank" rel="noopener">
+            <span class="tm__stars" aria-hidden="true">★★★★★</span>
+            <span>{testimonials.source.label}</span>
+            <span class="tm__count">· {testimonials.source.detail}</span>
+          </a>
+        </>
+      )}
     </header>
 
     <ul class="tm__list">
@@ -46,9 +56,11 @@ if (items.length === 0) return new Response(null, { status: 204 });
     <!-- A real position indicator for the swipe rail. The three dots inside
          each card look exactly like one and never move, which on a phone
          reads as „you are on the first of three“ on every card. -->
-    <div class="tm__dots" data-tm-dots aria-hidden="true">
-      {items.map(() => <span class="tm__dot"></span>)}
-    </div>
+    {items.length > 1 && (
+      <div class="tm__dots" data-tm-dots aria-hidden="true">
+        {items.map(() => <span class="tm__dot"></span>)}
+      </div>
+    )}
   </div>
 </section>
 
@@ -57,6 +69,30 @@ if (items.length === 0) return new Response(null, { status: 204 });
   .tm__head { text-align: center; margin-bottom: clamp(2.5rem, 5vw, 3.5rem); }
   .tm__title { font-size: var(--step-3); }
 
+  .tm__note {
+    max-width: 46ch;
+    margin: 0.9rem auto 0;
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+  .tm__source {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    margin-top: 0.9rem;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--rule);
+    border-radius: 100px;
+    background: var(--paper-warm);
+    color: inherit;
+    font-size: var(--step--1);
+    text-decoration: none;
+    transition: border-color 0.3s var(--ease);
+  }
+  .tm__source:hover { border-color: color-mix(in oklab, var(--moss) 45%, transparent); }
+  .tm__stars { color: #C9922F; letter-spacing: 0.08em; }
+  .tm__count { color: var(--muted); }
+
   .tm__list {
     list-style: none;
     margin: 0; padding: 0;
@@ -64,6 +100,9 @@ if (items.length === 0) return new Response(null, { status: 204 });
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 17.5rem), 1fr));
     gap: clamp(1.25rem, 2.5vw, 2rem);
   }
+  /* One real review does not get stretched across the width of the page. */
+  .tm__list:has(> :only-child) { max-width: 34rem; margin-inline: auto; }
+  .tm__list:has(> :only-child) .tm__by { min-height: 0; }
 
   .tm__item { display: grid; }
   .tm__fig {

@@ -114,7 +114,9 @@ const jsonLd = [
     <Process />
     <Included />
     <Gallery />
-    {content.testimonials.length > 0 && <Testimonials items={content.testimonials} />}
+    {content.testimonials.length > 0 && (
+      <Testimonials items={content.testimonials} fromGoogle={content.testimonialsFromGoogle} />
+    )}
     <PrivateEvents />
     <Faq items={content.faq} />
     <Contact />

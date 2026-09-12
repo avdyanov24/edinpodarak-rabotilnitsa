@@ -29,6 +29,8 @@ export interface Trader {
 export interface EditableContent {
   faq: FaqItem[];
   testimonials: Testimonial[];
+  /** False once she has written her own: the „от Google“ note then stops being true. */
+  testimonialsFromGoogle: boolean;
   trader: Trader;
 }
 
@@ -53,6 +55,7 @@ export async function getContent(): Promise<EditableContent> {
   return {
     faq: faq.length ? faq : faqDefaults.items,
     testimonials: testimonials.length ? testimonials : testimonialDefaults.items,
+    testimonialsFromGoogle: testimonials.length === 0,
     trader: { name: str(t.name), eik: str(t.eik), address: str(t.address) },
   };
 }
