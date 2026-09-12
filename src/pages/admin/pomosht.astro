@@ -255,8 +255,9 @@ const live = (r: { revoked_at: string | null; expires_at: string }) =>
     border-radius: 6px;
     font-size: 0.9rem;
   }
-  /* .help li caps body text at 60ch; these are rows, not prose. */
-  .sess__row { max-width: none; }
+  /* `.help li` caps body text at 60ch and outranks a bare class; these are
+     rows, not prose, so they take the width of the card. */
+  .help .sess__row { max-width: none; }
   .sess__row.is-me { border-color: #BBD3B4; background: #F4F8F2; }
   .sess__dev { grid-column: 1; font-weight: 600; }
   .sess__meta { grid-column: 1; color: var(--muted); font-size: 0.82rem; }
