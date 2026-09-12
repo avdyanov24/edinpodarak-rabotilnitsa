@@ -22,7 +22,7 @@ await db.exec(`
   end $$;
 `);
 
-for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts', '0006_manual_bookings', '0007_minimum', '0008_admin_sessions']) {
+for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts', '0006_manual_bookings', '0007_minimum', '0008_admin_sessions', '0009_reminders']) {
   try {
     await db.exec(readFileSync(`supabase/migrations/${f}.sql`, 'utf8'));
     ok(`migration ${f} applies`, true);
@@ -270,6 +270,57 @@ ok('old attempts are cleaned up', left.rows[0].n === 0, `${left.rows[0].n} stale
   ok('and the table itself has row level security with no policies',
      rls.rows[0].relrowsecurity === true
      && (await db.query(`select count(*)::int as n from pg_policies where tablename = 'admin_sessions'`)).rows[0].n === 0);
+}
+
+// --- the reminder the day before --------------------------------------------
+// The site promises one under the booking form. What matters here is that it
+// picks exactly the people who are coming, and that it can only be spent once
+// - and only after an email has really gone.
+{
+  const soon = await db.query(`
+    insert into events (slug, status, title, starts_at, capacity)
+    values ('utre', 'published', 'Утре', now() + interval '20 hours', 8) returning id`);
+  const later = await db.query(`
+    insert into events (slug, status, title, starts_at, capacity)
+    values ('sled-mesec', 'published', 'След месец', now() + interval '30 days', 8) returning id`);
+  const hidden = await db.query(`
+    insert into events (slug, status, title, starts_at, capacity)
+    values ('chernova', 'draft', 'Чернова', now() + interval '20 hours', 8) returning id`);
+
+  const sign = (id, name) => db.query(
+    `select * from register_for_event($1,$2,$3,'0888123456',1,null)`,
+    [id, name, `${name}@example.com`]);
+
+  await sign(soon.rows[0].id, 'Утрешна');
+  await sign(later.rows[0].id, 'Далечна');
+  // The form refuses a draft, so this one goes in the way she would put it in.
+  await db.query(`select * from register_manual($1, 'Скрита', 'skrita@example.com', '0888123456', 1, null)`,
+                 [hidden.rows[0].id]);
+
+  const window = () => db.query(
+    `select * from reminders_due(now() + interval '10 hours', now() + interval '38 hours')`);
+
+  let due = await window();
+  ok('the reminder finds tomorrow\'s people', due.rows.length === 1, `${due.rows.length} due`);
+  ok('and only them', due.rows[0]?.full_name === 'Утрешна', due.rows[0]?.full_name);
+  ok('it carries what the email needs',
+     Boolean(due.rows[0]?.email && due.rows[0]?.cancel_token && due.rows[0]?.event_title));
+
+  // somebody who dropped out is not reminded to come
+  const gone = await sign(soon.rows[0].id, 'Отказала');
+  await db.query(`select * from cancel_registration($1)`, [gone.rows[0].cancel_token]);
+  due = await window();
+  ok('somebody who cancelled is not reminded', due.rows.length === 1, `${due.rows.length} due`);
+
+  await db.query(`select reminder_sent($1)`, [due.rows[0].id]);
+  ok('and once the email has gone, the reminder is spent',
+     (await window()).rows.length === 0);
+
+  const grants = await db.query(`
+    select bool_or(has_function_privilege('anon', p.oid, 'execute')) as anon_any
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname in ('reminders_due', 'reminder_sent')`);
+  ok('neither reminder function is reachable by anon', grants.rows[0].anon_any === false);
 }
 
 await db.close();

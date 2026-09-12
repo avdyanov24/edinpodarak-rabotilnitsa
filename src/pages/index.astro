@@ -114,7 +114,7 @@ const jsonLd = [
     <Process />
     <Included />
     <Gallery />
-    <Testimonials items={content.testimonials} />
+    {content.testimonials.length > 0 && <Testimonials items={content.testimonials} />}
     <PrivateEvents />
     <Faq items={content.faq} />
     <Contact />

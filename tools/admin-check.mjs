@@ -116,9 +116,23 @@ await p.waitForTimeout(200);
 ok('a question can be added', (await p.locator('input[name=faq_q]').count()) === before + 1);
 await p.locator('input[name=faq_q]').last().fill('Мога ли да платя с карта?');
 await p.locator('textarea[name=faq_a]').last().fill('Да, на място.');
+
+// The privacy notice is not a valid GDPR notice without these, and until now
+// the only way to fill them in was to edit the page and deploy.
+await p.fill('#trader_name', 'ЕТ „Тест“');
+await p.fill('#trader_eik', '123456789');
+await p.fill('#trader_address', 'гр. Гоце Делчев, ул. „Тестова“ 1');
 await p.click('button[type=submit]');
 await p.waitForURL((u) => u.searchParams.get('zapazeno') === '1', { timeout: 8000 });
 const home = await (await p.request.get(`${B}/`)).text();
+{
+  const privacy = await (await p.request.get(`${B}/poveritelnost`)).text();
+  ok('the trader she typed is who the privacy notice names',
+     privacy.includes('ЕТ „Тест“') && privacy.includes('123456789')
+     && !privacy.includes('[ТЪРГОВСКО НАИМЕНОВАНИЕ]'));
+  ok('and the „fill this in“ warning is gone once it is filled in',
+     !privacy.includes('За довършване преди пускане'));
+}
 ok('the new question reaches the public page', home.includes('Мога ли да платя с карта?'));
 
 // ---------- deleting it again ----------

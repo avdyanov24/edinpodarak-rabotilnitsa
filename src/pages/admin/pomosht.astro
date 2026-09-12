@@ -1,6 +1,6 @@
 ---
 import Admin from '../../layouts/Admin.astro';
-import { readSession, revokeOtherSessions, recentSessions } from '../../lib/auth';
+import { readSession, revokeOtherSessions, recentSessions, changePassword } from '../../lib/auth';
 import { brand } from '../../data/site';
 
 export const prerender = false;
@@ -18,11 +18,37 @@ if (!session) return Astro.redirect('/admin/vhod', 302);
  * her own with one button - which is also what to press the day the password
  * changes.
  */
+let pwError = '';
+let pwDone = false;
+
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  if (String(form.get('action') ?? '') === 'revoke') {
+  const action = String(form.get('action') ?? '');
+
+  if (action === 'revoke') {
     const n = await revokeOtherSessions(session);
     return Astro.redirect(`/admin/pomosht?izlezli=${n}#vlizaniya`, 302);
+  }
+
+  if (action === 'password') {
+    const current = String(form.get('current') ?? '');
+    const next = String(form.get('next') ?? '');
+    const again = String(form.get('again') ?? '');
+
+    if (next !== again) {
+      pwError = 'Двете нови пароли не съвпадат.';
+    } else {
+      const result = await changePassword(session, current, next);
+      pwError = {
+        ok: '',
+        wrong: 'Сегашната парола не е вярна.',
+        short: 'Новата парола трябва да е поне 10 знака. По-дълга е по-добра от по-сложна.',
+        same: 'Новата парола е същата като сегашната.',
+        unsupported: 'На този сървър паролата се сменя от настройките на хостинга, не оттук.',
+        failed: 'Не успях да я сменя. Опитай пак след малко.',
+      }[result];
+      pwDone = result === 'ok';
+    }
   }
 }
 
@@ -171,6 +197,42 @@ const live = (r: { revoked_at: string | null; expires_at: string }) =>
     </p>
   </section>
 
+  <section class="card help" id="parola">
+    <h2>Паролата ти</h2>
+    {pwDone && (
+      <p class="tip">
+        Готово. Новата парола важи отсега, а всички други устройства излязоха
+        от панела - влизат пак само с нея.
+      </p>
+    )}
+    {pwError && <p class="note note--bad">{pwError}</p>}
+    <p>
+      Смени я тук, когато поискаш - и задължително, ако някой друг я е виждал.
+      Дълга е по-добре от сложна: три думи, които само ти би събрала, се помнят
+      и не се отгатват.
+    </p>
+    <details class="pw" open={Boolean(pwError)}>
+      <summary>Смени паролата</summary>
+      <form method="POST" class="pw__form">
+        <input type="hidden" name="action" value="password" />
+        <input type="hidden" name="username" value={session.email} autocomplete="username" hidden />
+        <label class="fld">
+          <span>Сегашната парола</span>
+          <input type="password" name="current" required autocomplete="current-password" />
+        </label>
+        <label class="fld">
+          <span>Нова парола</span>
+          <input type="password" name="next" required minlength="10" autocomplete="new-password" />
+        </label>
+        <label class="fld">
+          <span>Новата пак</span>
+          <input type="password" name="again" required minlength="10" autocomplete="new-password" />
+        </label>
+        <button class="btn" type="submit">Запази новата парола</button>
+      </form>
+    </details>
+  </section>
+
   <section class="card help" id="vlizaniya">
     <h2>Влизания в панела</h2>
     <p>
@@ -245,6 +307,20 @@ const live = (r: { revoked_at: string | null; expires_at: string }) =>
   }
   .warn { background: #FBF3DE; }
 
+  .pw { margin-top: 0.4rem; }
+  .pw summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+  .pw[open] summary { margin-bottom: 0.8rem; }
+  .pw__form { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: end; }
+  .fld { display: grid; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
+  .fld input {
+    width: 13rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 1rem;
+  }
+
   .sess { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.5rem; }
   .sess__row {
     display: grid;
@@ -271,6 +347,8 @@ const live = (r: { revoked_at: string | null; expires_at: string }) =>
   @media (max-width: 520px) {
     .sess__row { grid-template-columns: 1fr; }
     .sess__state { grid-column: 1; grid-row: auto; }
+    .pw__form { display: grid; }
+    .fld input { width: 100%; }
   }
   .sess__form { margin-bottom: 0.9rem; }
 </style>

@@ -263,6 +263,49 @@ export async function revokeOtherSessions(session: Session): Promise<number> {
   }
 }
 
+/**
+ * Changing the password from inside the panel.
+ *
+ * Until now this was „open Supabase, find Authentication, find Users“ - which
+ * for the person this is built for means it never happens, and the password
+ * that was set up once by a developer stays set up forever. It is three
+ * fields on the Помощ page instead.
+ *
+ * The current password is required: a session somebody else was holding must
+ * not be able to lock the owner out of her own panel. Every other session is
+ * ended afterwards, because a changed password that leaves the old sessions
+ * running has not changed anything for whoever is in one.
+ */
+export type PasswordChange = 'ok' | 'wrong' | 'short' | 'same' | 'unsupported' | 'failed';
+
+export async function changePassword(
+  session: Session, current: string, next: string,
+): Promise<PasswordChange> {
+  // Without Supabase the pair comes from the environment, and nothing here
+  // can rewrite a host's environment variables.
+  if (!hasSupabase()) return 'unsupported';
+  if (next.trim().length < 10) return 'short';
+  if (next === current) return 'same';
+  if (!(await signIn(session.email, current))) return 'wrong';
+
+  try {
+    const { admin } = await import('./db/supabase');
+    const client = admin();
+    const { data, error } = await client.auth.admin.listUsers();
+    if (error) return 'failed';
+    const user = data.users.find((u) => (u.email ?? '').toLowerCase() === session.email.toLowerCase());
+    if (!user) return 'failed';
+
+    const { error: updateError } = await client.auth.admin.updateUserById(user.id, { password: next });
+    if (updateError) return 'failed';
+  } catch {
+    return 'failed';
+  }
+
+  await revokeOtherSessions(session);
+  return 'ok';
+}
+
 /** The sign-ins on this account, for her to look at. */
 export async function recentSessions(email: string): Promise<SessionRecord[]> {
   try {

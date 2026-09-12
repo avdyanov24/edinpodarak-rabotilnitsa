@@ -30,8 +30,14 @@ if (Astro.request.method === 'POST') {
   const testimonials = zip(['t_quote', 't_name', 't_detail'], ([quote, name, detail]) => ({ quote, name, detail }))
     .filter((r) => r.quote && r.name);
 
+  const trader = {
+    name: String(form.get('trader_name') ?? '').trim(),
+    eik: String(form.get('trader_eik') ?? '').trim(),
+    address: String(form.get('trader_address') ?? '').trim(),
+  };
+
   try {
-    await saveContent({ faq, testimonials });
+    await saveContent({ faq, testimonials, trader });
     return Astro.redirect('/admin/sadarzhanie?zapazeno=1', 302);
   } catch {
     error = 'Не можах да запазя. Опитай пак.';
@@ -77,7 +83,9 @@ const content = await getContent();
     <section class="card sec">
       <h2 class="sec__title">Отзиви</h2>
       <p class="sub">
-        Тези на сайта в момента са примерни. Замени ги с истински, когато имаш.
+        Празно е. Докато няма нито един отзив, секцията изобщо не се показва на
+        сайта - по-добре нищо, отколкото измислени думи. Добавиш ли един, той
+        се появява веднага.
       </p>
       <div data-rows="t">
         {content.testimonials.map((t) => (
@@ -100,6 +108,32 @@ const content = await getContent();
         ))}
       </div>
       <button class="btn btn--ghost btn--sm" type="button" data-add="t">+ Още един отзив</button>
+    </section>
+
+    <section class="card sec">
+      <h2 class="sec__title">Данни на търговеца</h2>
+      <p class="sub">
+        Влизат в „Политика за поверителност“. По закон трябва да пише кой
+        точно събира имената и телефоните на хората - иначе документът не е
+        валиден. Ако не си сигурна какво да напишеш, питай счетоводителя си.
+      </p>
+      <div class="field">
+        <label for="trader_name">Наименование на търговеца</label>
+        <input id="trader_name" type="text" name="trader_name" value={content.trader.name}
+               placeholder="ЕТ „…“ / „…“ ЕООД" />
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="trader_eik">ЕИК</label>
+          <input id="trader_eik" type="text" name="trader_eik" value={content.trader.eik}
+                 inputmode="numeric" placeholder="123456789" />
+        </div>
+        <div class="field">
+          <label for="trader_address">Седалище по регистрация</label>
+          <input id="trader_address" type="text" name="trader_address" value={content.trader.address}
+                 placeholder="гр. Гоце Делчев, ул. „…“ 1" />
+        </div>
+      </div>
     </section>
 
     <div class="actions"><button class="btn" type="submit">Запази</button></div>

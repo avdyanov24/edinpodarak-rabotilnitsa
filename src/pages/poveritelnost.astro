@@ -1,6 +1,14 @@
 ---
 import Legal from '../layouts/Legal.astro';
 import { brand } from '../data/site';
+import { getContent } from '../lib/content';
+
+export const prerender = false;
+
+// Typed once in Панел → Съдържание → „Данни на търговеца“. While they are
+// missing the notice says so out loud rather than quietly naming nobody.
+const { trader } = await getContent();
+const named = Boolean(trader.name && trader.eik && trader.address);
 ---
 
 <Legal
@@ -8,16 +16,20 @@ import { brand } from '../data/site';
   description="Как обработваме личните данни при записване за работилница."
   updated="8 септември 2026 г."
 >
-  <p class="todo">
-    <strong>За довършване преди пускане:</strong> тук трябват точното наименование на
-    търговеца, ЕИК и седалище по регистрация. Без тях документът не е валиден
-    като уведомление по GDPR.
-  </p>
+  {!named && (
+    <p class="todo">
+      <strong>За довършване преди пускане:</strong> тук трябват точното наименование
+      на търговеца, ЕИК и седалище по регистрация. Попълват се в панела, в
+      „Съдържание“. Без тях документът не е валиден като уведомление по GDPR.
+    </p>
+  )}
 
   <h2>Кой обработва данните ти</h2>
   <p>
-    Администратор на личните данни е [ТЪРГОВСКО НАИМЕНОВАНИЕ], ЕИК [ЕИК], със
-    седалище [АДРЕС]. За въпроси: <a class="link" href={`mailto:${brand.email}`}>{brand.email}</a>,
+    {named
+      ? `Администратор на личните данни е ${trader.name}, ЕИК ${trader.eik}, със седалище ${trader.address}.`
+      : 'Администратор на личните данни е търговецът, който стои зад „Подари с Джейля“ - данните му се попълват преди пускането на сайта.'}
+    За въпроси: <a class="link" href={`mailto:${brand.email}`}>{brand.email}</a>,
     <a class="link" href={`tel:${brand.phone}`}>{brand.phoneDisplay}</a>.
   </p>
 

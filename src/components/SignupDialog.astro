@@ -4,6 +4,7 @@ import type { WorkshopEvent } from '../data/events';
 import { fmtWhen, fmtPrice, fmtDuration, availability } from '../lib/format';
 import { brand } from '../data/site';
 import { bookingsPersist } from '../lib/env';
+import { emailsConfigured } from '../lib/email';
 
 interface Props { events: WorkshopEvent[] }
 const { events } = Astro.props;
@@ -14,6 +15,9 @@ const { events } = Astro.props;
  * an email to Джейля instead of swallowing someone's seat.
  */
 const online = !import.meta.env.PUBLIC_PAGES && bookingsPersist();
+
+/** Whether there is a mail service behind this deploy at all. */
+const mailOn = emailsConfigured();
 
 // Only what the dialog needs, so we don't ship the full descriptions twice.
 const payload = events.map((e) => ({
@@ -72,7 +76,11 @@ const payload = events.map((e) => ({
           <label class="fld">
             <span class="fld__label">Имейл <b aria-hidden="true">*</b></span>
             <input class="fld__input" type="email" name="email" required autocomplete="email" placeholder="maria@example.com" />
-            <span class="fld__hint">Пращам потвърждение и напомняне ден преди работилницата.</span>
+            <span class="fld__hint">
+              {mailOn
+                ? 'Пращам потвърждение и напомняне ден преди работилницата.'
+                : 'Пазя го само за връзка около работилницата.'}
+            </span>
             <span class="fld__err" data-err="email"></span>
           </label>
 
@@ -585,8 +593,10 @@ const payload = events.map((e) => ({
         applySeats(current.id, out.seats);
         form.querySelector('.su__fields')?.setAttribute('hidden', '');
         form.querySelector('.su__actions')?.setAttribute('hidden', '');
-        say('ok', 'Готово, мястото е твое.',
-          `Пратих потвърждение на ${fd.get('email')}. До ден преди работилницата ще получиш и напомняне с адреса.`);
+        say('ok', 'Готово, мястото е твое.', out.mailed
+          ? `Пратих потвърждение на ${fd.get('email')}. Ден преди работилницата ще получиш и напомняне с адреса.`
+          // `when` already ends in „ч.“ - a second full stop crept in here.
+          : `Записах те за ${current.when} Ще се чуем за подробностите - ако нещо се промени дотогава, обади ми се на ${contact.phoneDisplay}.`);
       } else if (out.status === 'waitlist') {
         applySeats(current.id, out.seats);
         form.querySelector('.su__fields')?.setAttribute('hidden', '');

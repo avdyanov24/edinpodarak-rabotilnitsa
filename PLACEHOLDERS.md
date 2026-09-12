@@ -67,9 +67,9 @@ under a minute.
 | `src/data/site.ts` | **That the piece is collected later.** Clay has to dry and be fired twice, so the site says she writes when it is ready. Standard for ceramics, but confirm how long it takes and whether people collect or she posts them |
 | `src/data/site.ts` | The four steps of „Как протича“ and the clock times on them |
 | `src/data/site.ts` | Everything under „Какво е включено“, including that glazing and both firings are in the price |
-| `src/data/site.ts` | The three testimonials - plausible, but nobody said them |
-| `src/data/site.ts` | The age limit (12) and the group sizes under „За групи“ (6–25). **The 25 now conflicts with her „максимум 8 в работилница“** - presumably private groups at their own venue, but it needs one word from her |
-| `src/pages/poveritelnost.astro` | Legal identity is `[ТЪРГОВСКО НАИМЕНОВАНИЕ]`, `[ЕИК]`, `[АДРЕС]` |
+| ~~`src/data/site.ts`~~ | ~~The three testimonials~~ - **removed.** They were invented, and the section now renders nothing until a real one is entered in the panel |
+| `src/data/site.ts` | The age limit (12). „За групи“ no longer invents a range: it says up to eight in the shop (her number) and „за по-голяма група идвам при вас“ - but how large a group she will travel with is still unconfirmed |
+| `src/pages/poveritelnost.astro` | Legal identity is still unknown, but it is no longer a code change: Панел → Съдържание → „Данни на търговеца“ fills it in, and the notice says it is unfinished until it is |
 | `src/pages/usloviya.astro` | The cancellation terms. The minimum of three in them is hers; the wording „до деня преди“ is not |
 
 **Most of the photography is now hers**, cut out of her own event posters -

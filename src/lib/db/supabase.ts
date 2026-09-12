@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type {
   Db, WorkshopEvent, Registration, RegistrationStatus,
   RegisterInput, RegisterResult, CancelResult,
-  ManualInput,
+  ManualInput, DueReminder,
 } from './types';
 import { DbError } from './types';
 import { env } from '../env';
@@ -174,6 +174,16 @@ export const supabaseDb: Db = {
   async saveSiteContent(data) {
     const { error } = await admin().from('site_content').upsert({ id: true, data });
     if (error) throw new DbError('content_save_failed', error.message);
+  },
+
+  async remindersDue(from: string, to: string) {
+    const { data, error } = await admin().rpc('reminders_due', { p_from: from, p_to: to });
+    if (error) throw new DbError('reminders_failed', error.message);
+    return (data ?? []) as DueReminder[];
+  },
+
+  async reminderSent(id: string) {
+    await admin().rpc('reminder_sent', { p_id: id });
   },
 
   async uploadImage(file: File, kind: { type: string; ext: string }) {

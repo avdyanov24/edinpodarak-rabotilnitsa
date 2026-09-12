@@ -189,26 +189,17 @@ export const gallery = {
 export const testimonials = {
   eyebrow: 'Отзиви',
   title: 'Какво казват след това',
-  items: [
-    {
-      quote:
-        'Отидох, защото приятелка ме довлече. Сега пия кафето си всяка сутрин от чаша, която сама съм направила.',
-      name: 'Мария',
-      detail: 'беше на „Глина и лимонада“',
-    },
-    {
-      quote:
-        'Мислех, че ще е като час по труд и ще се излагам. Оказа се, че просто мачкаш глина и си говориш с хора.',
-      name: 'Ивелина',
-      detail: 'беше на ботаническата чиния',
-    },
-    {
-      quote:
-        'Заведох жена си за годишнината вместо на ресторант. Определено по-добра идея.',
-      name: 'Красимир',
-      detail: 'беше на керамичната чаша',
-    },
-  ],
+  /**
+   * Empty on purpose.
+   *
+   * There were three here and all three were invented - plausible sentences
+   * that nobody said. On a page selling an evening with a person, that is the
+   * one lie that would cost her something real, so they are gone rather than
+   * dressed up with a disclaimer. The section renders nothing at all while
+   * this is empty; the moment she pastes a real one into Съдържание, it comes
+   * back with it.
+   */
+  items: [] as { quote: string; name: string; detail: string }[],
 };
 
 export const faq = {
@@ -247,7 +238,7 @@ export const faq = {
     },
     {
       q: 'Ако се запиша и не мога да дойда?',
-      a: 'Пиши ми или се откажи от връзката в имейла за потвърждение. Мястото ти отива на някой от чакащите, а ти идваш на следващата.',
+      a: 'Обади ми се или ми пиши - освобождавам мястото веднага и то отива при някой от чакащите, а ти идваш на следващата. Ако си получила имейл с потвърждение, в него също има връзка за отказ.',
     },
     {
       q: 'Може ли да си направим частна работилница?',
@@ -259,7 +250,7 @@ export const faq = {
 export const privateEvents = {
   title: 'Частни и фирмени работилници',
   text:
-    'Рожден ден, моминско парти, тиймбилдинг или подарък за екипа. От 6 до 25 души, в магазина или при вас, в ден по ваш избор - идвам с глината и всичко останало.',
+    'Рожден ден, моминско парти, тиймбилдинг или подарък за екипа. В магазина сядат до осем души; за по-голяма група идвам при вас - с глината и всичко останало, в ден по ваш избор.',
   cta: 'Изпрати запитване',
 };
 

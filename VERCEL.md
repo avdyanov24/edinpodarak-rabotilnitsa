@@ -21,6 +21,7 @@
 | `SITE_URL` | адресът на сайта, напр. `https://rabotilnitsa.edinpodarak.com` | не, но канониклите и sitemap-ът зависят от нея |
 | `SUPABASE_URL` | от проекта в Supabase | за да работи записването |
 | `SUPABASE_SERVICE_ROLE_KEY` | от проекта в Supabase | за да работи записването |
+| `CRON_SECRET` | случаен низ | да - без нея напомнянето отказва да се изпълни |
 | `RESEND_API_KEY` | от Resend | не - без нея просто няма имейли |
 | `MAIL_FROM` | напр. `Работилница <zapisvane@mail.edinpodarak.com>` | заедно с горната |
 

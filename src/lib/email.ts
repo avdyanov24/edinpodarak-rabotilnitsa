@@ -83,6 +83,38 @@ export function confirmationEmail(
   };
 }
 
+/**
+ * The day before.
+ *
+ * Short on purpose: it is read on a telephone, on the way somewhere, and the
+ * only things that matter are when, where, and the way out if something has
+ * come up. The cancel link is in here as much for her as for them - a place
+ * released the evening before is a place somebody on the waiting list can
+ * still take.
+ */
+export function reminderEmail(
+  r: { full_name: string; event_title: string; starts_at: string; venue_name: string; venue_address: string; bring_note: string | null },
+  cancelUrl: string,
+) {
+  return {
+    subject: `Утре е „${r.event_title}“`,
+    html: shell(`
+      <h1 style="font-size:22px;margin:0 0 12px">Здравей, ${r.full_name}!</h1>
+      <p style="font-size:15px;line-height:1.6">
+        Напомням ти за <strong>„${r.event_title}“</strong>.
+      </p>
+      <table style="font-size:15px;line-height:1.7;margin:16px 0">
+        <tr><td style="padding-right:14px;color:#5C6B60">Кога</td><td><strong>${fmtWhen(r.starts_at)}</strong></td></tr>
+        <tr><td style="padding-right:14px;color:#5C6B60">Къде</td><td>${r.venue_name}, ${r.venue_address}</td></tr>
+      </table>
+      ${r.bring_note ? `<p style="font-size:15px;line-height:1.6">${r.bring_note}</p>` : ''}
+      <p style="font-size:13px;color:#5C6B60">
+        Ако все пак не можеш да дойдеш, <a href="${cancelUrl}" style="color:#3E6B43">откажи мястото си</a> -
+        така ще го подарим на някой от чакащите.
+      </p>`),
+  };
+}
+
 export function noticeEmail(event: WorkshopEvent, reg: {
   full_name: string; email: string; phone: string; people_count: number; note?: string | null;
 }, status: string, progress: string | null = null) {
@@ -109,3 +141,11 @@ export async function deliver(to: string, mail: { subject: string; html: string 
 }
 
 export const ownerAddress = () => env('OWNER_EMAIL') ?? 'djeilqart@gmail.com';
+
+/**
+ * Whether this deploy can send at all.
+ *
+ * The site used to tell every visitor „Пратих потвърждение“ whether or not
+ * there was anything behind it to send with. The pages ask this first now.
+ */
+export const emailsConfigured = () => Boolean(env('RESEND_API_KEY') && env('MAIL_FROM'));

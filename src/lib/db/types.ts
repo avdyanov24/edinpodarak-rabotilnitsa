@@ -46,8 +46,23 @@ export interface Registration {
   consent_at: string | null;
   cancel_token: string;
   created_at: string;
+  /** When the day-before reminder went out; null while it is still due. */
+  reminded_at?: string | null;
   /** Where the booking came from - the form, or her hand. */
   source: 'site' | 'manual';
+}
+
+/** One row the reminder job has to write to. */
+export interface DueReminder {
+  id: string;
+  full_name: string;
+  email: string;
+  cancel_token: string;
+  event_title: string;
+  starts_at: string;
+  venue_name: string;
+  venue_address: string;
+  bring_note: string | null;
 }
 
 /** A booking she takes by phone or on Instagram and types into the panel. */
@@ -111,6 +126,10 @@ export interface Db {
 
   getSiteContent(): Promise<Record<string, unknown>>;
   saveSiteContent(data: Record<string, unknown>): Promise<void>;
+
+  /** Bookings due the day-before reminder, and the mark that one went out. */
+  remindersDue(from: string, to: string): Promise<DueReminder[]>;
+  reminderSent(id: string): Promise<void>;
 
   /** `kind` is sniffed from the bytes by the endpoint - never the caller's word for it. */
   uploadImage(file: File, kind: { type: string; ext: string }): Promise<string>;

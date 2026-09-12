@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type {
   Db, WorkshopEvent, Registration, RegistrationStatus,
   RegisterInput, RegisterResult, CancelResult,
-  ManualInput,
+  ManualInput, DueReminder,
 } from './types';
 import { DbError } from './types';
 import { seedEvents } from '../../data/events';
@@ -288,6 +288,33 @@ export const localDb: Db = {
       const db = await read();
       db.site_content = data;
       await write(db);
+    });
+  },
+
+  async remindersDue(from: string, to: string) {
+    const db = await read();
+    const events = new Map(db.events.map((e) => [e.id, e]));
+    return db.registrations
+      .filter((r) => {
+        const e = events.get(r.event_id);
+        return e && r.status === 'confirmed' && !r.reminded_at && r.email.includes('@')
+          && e.status === 'published' && e.starts_at >= from && e.starts_at < to;
+      })
+      .map((r) => {
+        const e = events.get(r.event_id)!;
+        return {
+          id: r.id, full_name: r.full_name, email: r.email, cancel_token: r.cancel_token,
+          event_title: e.title, starts_at: e.starts_at,
+          venue_name: e.venue_name, venue_address: e.venue_address, bring_note: e.bring_note,
+        } as DueReminder;
+      });
+  },
+
+  reminderSent(id: string) {
+    return exclusive(async () => {
+      const db = await read();
+      const row = db.registrations.find((r) => r.id === id);
+      if (row && !row.reminded_at) { row.reminded_at = new Date().toISOString(); await write(db); }
     });
   },
 

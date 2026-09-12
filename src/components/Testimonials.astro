@@ -4,6 +4,9 @@ import type { Testimonial } from '../lib/content';
 
 interface Props { items?: Testimonial[] }
 const { items = testimonials.items } = Astro.props;
+
+// Never render an empty wall of quotes: see the note in src/data/site.ts.
+if (items.length === 0) return new Response(null, { status: 204 });
 ---
 
 <section class="tm section">

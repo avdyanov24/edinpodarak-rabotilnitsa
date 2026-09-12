@@ -54,6 +54,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
     if (result.status === 'full') return json({ status: 'full' });
 
     // Emails must never take the booking down with them.
+    let mailed = false;
     const event = (await db.listPublishedEvents()).find((e) => e.id === event_id);
     if (event && result.cancel_token) {
       const cancelUrl = new URL(`/otkazhi/${result.cancel_token}`, url.origin).toString();
@@ -66,10 +67,14 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
         ? `Записани са ${taken} от ${event.capacity} - минимумът от ${event.min_participants} е събран.`
         : `Записани са ${taken} от ${event.capacity}. До минимума от ${event.min_participants} `
           + (toMin.needed === 1 ? 'остава още един.' : `остават още ${toMin.needed}.`);
-      await Promise.allSettled([
+      const [toThem] = await Promise.allSettled([
         deliver(email, confirmationEmail(event, full_name, cancelUrl, waitlisted)),
         deliver(ownerAddress(), noticeEmail(event, { full_name, email, phone, people_count, note }, result.status, progress)),
       ]);
+      // What the page is allowed to claim. Before this it always said
+      // „Пратих потвърждение на …“, including on a deploy with no mail
+      // service behind it, where nothing had been sent at all.
+      mailed = toThem.status === 'fulfilled' && toThem.value.sent === true;
     }
 
     // The seat count travels back with the answer so the page can correct
@@ -83,6 +88,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
       status: result.status,
       cancel_token: result.cancel_token,
       seats_left: result.seats_left,
+      mailed,
       seats: seats && {
         label: seats.label,
         left: seats.left,

@@ -1,4 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "astro"
+  "framework": "astro",
+  "crons": [
+    {
+      "path": "/api/cron/napomnyane",
+      "schedule": "0 7 * * *"
+    }
+  ]
 }
