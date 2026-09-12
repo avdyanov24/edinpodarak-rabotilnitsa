@@ -31,12 +31,6 @@ ok('dialog shows the right event',
   await page.locator('[data-su-title]').innerText());
 ok('seats shown in dialog', /места|място/.test(await page.locator('[data-su-seats]').innerText()),
   await page.locator('[data-su-seats]').innerText());
-// Three people is the smallest group she will run a workshop for. Whoever
-// books the first place has to be told that here, not by telephone later.
-ok('the dialog says how many it takes for the workshop to run',
-  await page.locator('[data-su-min]').isVisible()
-  && /3 записани/.test(await page.locator('[data-su-min]').innerText()),
-  await page.locator('[data-su-min]').innerText().catch(() => 'hidden'));
 await page.screenshot({ path: `${out}/flow-1-dialog.png` });
 
 // submit empty -> Bulgarian errors, no request
@@ -85,9 +79,12 @@ ok('the seat count corrects itself straight away',
   /7/.test(await page.locator('[data-su-seats]').innerText()),
   await page.locator('[data-su-seats]').innerText());
 ok('form hidden after success', await page.locator('.su__fields').isHidden());
-ok('and the confirmation is honest that the date is not certain yet',
-  /тръгва при 3 записани/.test(msgAfter()) && /ще преместим датата/.test(msgAfter()),
-  msgAfter().replace(/\n/g, ' ').slice(0, 140));
+// The smallest group she will run a workshop for is three, but that is a
+// number for the panel: nothing on the booking path raises a doubt about
+// whether the date is happening. Условия and ЧЗВ carry the fact instead.
+ok('and nothing in the confirmation puts the date in doubt',
+  !/тръгва при|преместим датата|не се съберем/.test(msgAfter()),
+  msgAfter().replace(/\n/g, ' ').slice(0, 110));
 await page.screenshot({ path: `${out}/flow-3-success.png` });
 
 // ---------- gallery lightbox ----------
@@ -204,18 +201,8 @@ ok('offer priced in EUR', parsed.offers?.priceCurrency === 'EUR', String(parsed.
 
 // The same honesty on the page people reach from her story link. By now the
 // booking above has taken one of the eight places, so two are still missing.
-const minLine = e.locator('[data-min-note]');
-const minText = await minLine.innerText().catch(() => '');
-const seated = await e.locator('.ev__heroText .seats__stool.is-taken').count();
-ok('the workshop page says whether the date is happening',
-  await minLine.isVisible() && /(тръгва при 3 записани|Групата е събрана)/.test(minText),
-  minText.slice(0, 120));
-// The sentence and the stools drawn beside it are two views of one number.
-ok('and it agrees with the seats drawn next to it',
-  seated >= 3 ? /Групата е събрана/.test(minText) : /тръгва при 3 записани/.test(minText),
-  `${seated} seated · ${minText.slice(0, 60)}`);
-ok('and it reads as something to act on, not as body text',
-  await minLine.evaluate((el) => getComputedStyle(el).color !== getComputedStyle(el.closest('.ev__heroText').querySelector('.ev__summary')).color));
+ok('the workshop page says nothing about the date being uncertain',
+  !/тръгва при|преместим датата|не се съберем/.test(await e.locator('.ev__heroText').innerText()));
 await e.close();
 
 await browser.close();

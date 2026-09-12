@@ -71,44 +71,24 @@ export function availability(capacity: number, taken: number, open: boolean): Av
 /**
  * How far a workshop is from the smallest group she will run it for.
  *
- * Her rule is three people; below that she moves the date. The site used to
- * say nothing about it, which left the first person to book believing a date
- * was certain when it was not - and left her making the awkward phone call.
+ * Her rule is three people; below that she moves the date. This is for the
+ * panel only - it is what tells her whether a date is happening, and it is
+ * the number she acts on. The public pages deliberately say nothing about
+ * it: the terms and the ЧЗВ carry the fact for anyone who wants it, and a
+ * booking page is not the place to raise a doubt about the date.
  *
- * This never stops anybody booking. It only names the state.
+ * Nothing here stops anybody booking. A date gets to three precisely because
+ * people can book below it.
  */
 export interface Minimum {
   /** How many more people are needed; 0 once the group is together. */
   needed: number;
   reached: boolean;
-  /** The whole thing, in her voice - for the workshop page and the booking. */
-  note: string;
-  /** The same fact in four words, for tight places. */
-  short: string;
 }
 
 export function minimum(taken: number, min: number): Minimum {
   const needed = Math.max(0, min - taken);
-  if (needed === 0) {
-    return {
-      needed: 0,
-      reached: true,
-      note: 'Групата е събрана - работилницата се провежда.',
-      short: 'Групата е събрана.',
-    };
-  }
-  // With nobody booked yet, „тръгва при 3 записани - остават още 3“ says the
-  // same number twice. The first person to look does not need the arithmetic.
-  const missing = needed === min ? ''
-    : needed === 1 ? ' - остава още един човек'
-    : ` - остават още ${needed}`;
-  return {
-    needed,
-    reached: false,
-    note: `Работилницата тръгва при ${min} записани${missing}. `
-      + 'Ако не се съберем, ще ти се обадя и ще преместим датата.',
-    short: `Тръгваме при ${min} записани.`,
-  };
+  return { needed, reached: needed === 0 };
 }
 
 /* ---------------------------------------------------------------------------

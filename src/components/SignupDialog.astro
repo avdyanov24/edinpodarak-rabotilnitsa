@@ -1,7 +1,7 @@
 ---
 import { u } from '../lib/url';
 import type { WorkshopEvent } from '../data/events';
-import { fmtWhen, fmtPrice, fmtDuration, availability, minimum } from '../lib/format';
+import { fmtWhen, fmtPrice, fmtDuration, availability } from '../lib/format';
 import { brand } from '../data/site';
 import { bookingsPersist } from '../lib/env';
 
@@ -26,7 +26,6 @@ const payload = events.map((e) => ({
   priceCents: e.price_cents,
   duration: fmtDuration(e.duration_minutes),
   seats: availability(e.capacity, e.seats_taken, e.registrations_open),
-  min: minimum(e.seats_taken, e.min_participants),
   minAge: e.min_age,
 }));
 ---
@@ -48,10 +47,6 @@ const payload = events.map((e) => ({
             <div><dt>Колко</dt><dd data-su-price></dd></div>
           </dl>
           <p class="su__seats" data-su-seats></p>
-          <!-- Three is the smallest group she runs a workshop for; somebody
-               booking the first place should read that here, not learn it
-               from a telephone call two days before. -->
-          <p class="su__min" data-su-min hidden></p>
         </div>
       </aside>
 
@@ -209,13 +204,6 @@ const payload = events.map((e) => ({
     justify-self: start;
     font-size: var(--step--1);
   }
-  .su__min {
-    margin: -0.3rem 0 0;
-    font-size: 0.82rem;
-    line-height: 1.45;
-    color: color-mix(in oklab, var(--cream) 74%, transparent);
-  }
-
   .su__seats.is-scarce { border-color: var(--clay); background: color-mix(in oklab, var(--clay) 30%, transparent); }
 
   /* --- right: the form --- */
@@ -350,11 +338,9 @@ const payload = events.map((e) => ({
 
 <script>
   interface Seats { left: number; full: boolean; scarce: boolean; label: string }
-  interface Min { needed: number; reached: boolean; note: string; short: string }
   interface EventLite {
     id: string; title: string; cover: string; when: string; venue: string;
-    price: string; priceCents: number; duration: string; seats: Seats;
-    min: Min; minAge: number | null;
+    price: string; priceCents: number; duration: string; seats: Seats; minAge: number | null;
   }
 
   const read = <T,>(sel: string): T =>
@@ -382,38 +368,19 @@ const payload = events.map((e) => ({
    * booking not having registered. The wording comes back from the server
    * so the rules for it live in one place.
    */
-  function applySeats(
-    eventId: string,
-    next: { label: string; left: number; scarce: boolean; full: boolean } | null,
-    min?: Min | null,
-  ) {
+  function applySeats(eventId: string, next: { label: string; left: number; scarce: boolean; full: boolean } | null) {
     // Everything below is cosmetic, and it runs inside the same try/catch as
     // the booking request. A typo in here once turned a booking that had
     // actually gone through into „Нещо се обърка.“ on screen - the one lie
     // this page must never tell. Nothing in here may escape.
     try {
-      applySeatsInner(eventId, next, min);
+      applySeatsInner(eventId, next);
     } catch {
       /* the seat counts will be right on the next page load */
     }
   }
 
-  function applySeatsInner(
-    eventId: string,
-    next: { label: string; left: number; scarce: boolean; full: boolean } | null,
-    min?: Min | null,
-  ) {
-    // The booking that just happened may have been the third one. The wording
-    // comes back from the server for the same reason the seat label does.
-    if (min) {
-      const ev0 = data.find((e) => e.id === eventId);
-      if (ev0) ev0.min = min;
-      const line = document.querySelector<HTMLElement>(`[data-min-note][data-event="${eventId}"]`);
-      if (line) { line.textContent = min.note; line.classList.toggle('is-set', min.reached); }
-      const inDialog = document.querySelector<HTMLElement>('[data-su-min]');
-      if (inDialog) inDialog.textContent = min.short;
-    }
-
+  function applySeatsInner(eventId: string, next: { label: string; left: number; scarce: boolean; full: boolean } | null) {
     if (!next) return;
     const ev = data.find((e) => e.id === eventId);
     if (ev) ev.seats = { ...ev.seats, ...next };
@@ -455,14 +422,6 @@ const payload = events.map((e) => ({
     if (seats) {
       seats.textContent = event.seats.label;
       seats.classList.toggle('is-scarce', event.seats.scarce);
-    }
-
-    // Only worth saying while the group is still short; once it is together,
-    // „Групата е събрана“ is reassurance rather than clutter.
-    const minLine = $('[data-su-min]');
-    if (minLine) {
-      minLine.textContent = event.min?.short ?? '';
-      minLine.hidden = !event.min || waitlist;
     }
 
 
@@ -623,16 +582,13 @@ const payload = events.map((e) => ({
       if (!res.ok) throw new Error(out?.error ?? 'request_failed');
 
       if (out.status === 'confirmed') {
-        applySeats(current.id, out.seats, out.min);
+        applySeats(current.id, out.seats);
         form.querySelector('.su__fields')?.setAttribute('hidden', '');
         form.querySelector('.su__actions')?.setAttribute('hidden', '');
-        // If the group is still short of three, say so now rather than let
-        // her ring this person two days before to move the date.
-        const short = out.min && !out.min.reached ? ` ${out.min.note}` : '';
         say('ok', 'Готово, мястото е твое.',
-          `Пратих потвърждение на ${fd.get('email')}. До ден преди работилницата ще получиш и напомняне с адреса.${short}`);
+          `Пратих потвърждение на ${fd.get('email')}. До ден преди работилницата ще получиш и напомняне с адреса.`);
       } else if (out.status === 'waitlist') {
-        applySeats(current.id, out.seats, out.min);
+        applySeats(current.id, out.seats);
         form.querySelector('.su__fields')?.setAttribute('hidden', '');
         form.querySelector('.su__actions')?.setAttribute('hidden', '');
         say('wait', 'Записах те при чакащите.',

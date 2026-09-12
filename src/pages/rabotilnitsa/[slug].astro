@@ -8,7 +8,7 @@ import { getPublishedEvents } from '../../lib/events';
 import { brand } from '../../data/site';
 import {
   fmtDate, fmtDateFull, fmtWeekday, fmtTime, fmtDuration, fmtPrice,
-  availability, minimum, endsAt, isoDuration,
+  availability, endsAt, isoDuration,
 } from '../../lib/format';
 import { root, u } from '../../lib/url';
 
@@ -33,7 +33,6 @@ if (!import.meta.env.PUBLIC_PAGES) {
 const event = (await getPublishedEvents()).find((e) => e.slug === Astro.params.slug);
 if (!event) return new Response('Няма такава работилница.', { status: 404 });
 const a = availability(event.capacity, event.seats_taken, event.registrations_open);
-const m = minimum(event.seats_taken, event.min_participants);
 const site = root(Astro.site);
 const past = new Date(event.starts_at).getTime() < Date.now();
 
@@ -127,13 +126,6 @@ const jsonLd = {
               </div>
             )}
 
-            <!-- Three people is the smallest group she will run a workshop
-                 for. Whoever books first is entitled to know the date is not
-                 certain yet - finding out by telephone two days before is how
-                 you lose somebody for good. -->
-            {!past && event.registrations_open && (
-              <p class={`ev__min${m.reached ? ' is-set' : ''}`} data-min-note data-event={event.id}>{m.note}</p>
-            )}
           </div>
 
           <figure class="ev__figure">
@@ -268,15 +260,6 @@ const jsonLd = {
   .ev__facts dd span { font-family: var(--sans); font-size: var(--step--1); color: var(--muted); }
   .ev__facts dd .link { font-family: var(--sans); font-size: var(--step--1); color: var(--moss); }
   .ev__help { margin: 0; padding-top: 1.2rem; border-top: 1px solid var(--rule-soft); font-size: var(--step--1); color: var(--muted); }
-
-  .ev__min {
-    margin: 1rem 0 0;
-    max-width: 34rem;
-    font-size: var(--step--1);
-    line-height: 1.5;
-    color: var(--clay-ink);
-  }
-  .ev__min.is-set { color: var(--moss); }
 
   .ev__quick {
     list-style: none;
