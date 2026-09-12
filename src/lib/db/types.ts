@@ -40,9 +40,22 @@ export interface Registration {
   people_count: number;
   note: string | null;
   status: RegistrationStatus;
-  consent_at: string;
+  /** Null for a booking she entered herself: no consent was ticked here. */
+  consent_at: string | null;
   cancel_token: string;
   created_at: string;
+  /** Where the booking came from - the form, or her hand. */
+  source: 'site' | 'manual';
+}
+
+/** A booking she takes by phone or on Instagram and types into the panel. */
+export interface ManualInput {
+  event_id: string;
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+  people_count: number;
+  note?: string | null;
 }
 
 export interface RegisterInput {
@@ -91,6 +104,8 @@ export interface Db {
 
   adminListRegistrations(eventId?: string): Promise<Registration[]>;
   adminSetRegistrationStatus(id: string, status: RegistrationStatus): Promise<void>;
+  /** Add a booking she took herself. Respects capacity; sends nothing. */
+  adminAddRegistration(input: ManualInput): Promise<{ status: 'confirmed' | 'waitlist'; seats_left: number }>;
 
   getSiteContent(): Promise<Record<string, unknown>>;
   saveSiteContent(data: Record<string, unknown>): Promise<void>;

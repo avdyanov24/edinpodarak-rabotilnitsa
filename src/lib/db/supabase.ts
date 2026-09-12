@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type {
   Db, WorkshopEvent, Registration, RegistrationStatus,
   RegisterInput, RegisterResult, CancelResult,
+  ManualInput,
 } from './types';
 import { DbError } from './types';
 import { env } from '../env';
@@ -136,6 +137,25 @@ export const supabaseDb: Db = {
     const { data, error } = await q;
     if (error) throw new DbError('list_failed', error.message);
     return (data ?? []) as Registration[];
+  },
+
+  async adminAddRegistration(input: ManualInput) {
+    const { data, error } = await admin().rpc('register_manual', {
+      p_event_id: input.event_id,
+      p_full_name: input.full_name,
+      p_email: input.email ?? null,
+      p_phone: input.phone ?? null,
+      p_people_count: input.people_count,
+      p_note: input.note ?? null,
+    });
+    if (error) {
+      const msg = error.message ?? '';
+      const code = ['invalid_name', 'invalid_people_count', 'unknown_event']
+        .find((c) => msg.includes(c)) ?? 'manual_failed';
+      throw new DbError(code, msg);
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    return { status: row.status, seats_left: row.seats_left };
   },
 
   async adminSetRegistrationStatus(id: string, status: RegistrationStatus) {

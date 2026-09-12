@@ -22,7 +22,7 @@ await db.exec(`
   end $$;
 `);
 
-for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts']) {
+for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts', '0006_manual_bookings']) {
   try {
     await db.exec(readFileSync(`supabase/migrations/${f}.sql`, 'utf8'));
     ok(`migration ${f} applies`, true);
@@ -145,6 +145,51 @@ await db.query(`update public.login_attempts set at = now() - interval '2 days'`
 await record('10.0.0.2', 'd@e.co', false);
 const left = await db.query(`select count(*)::int as n from public.login_attempts where at < now() - interval '24 hours'`);
 ok('old attempts are cleaned up', left.rows[0].n === 0, `${left.rows[0].n} stale rows left`);
+
+// --- bookings she takes herself ----------------------------------------------
+// Most of her places still go by phone or Instagram. Those rows have to count
+// against capacity like any other, but they carry no consent ticked here and
+// may have neither an email nor a phone.
+{
+  const ev3 = await db.query(`
+    insert into events (slug, status, title, starts_at, capacity, waitlist_enabled)
+    values ('rachno', 'draft', 'На ръка', now() + interval '20 days', 3, true) returning id`);
+  const id3 = ev3.rows[0].id;
+  const manual = (n, name, email = null, phone = null) =>
+    db.query(`select * from register_manual($1, $2, $3, $4, $5, null)`, [id3, name, email, phone, n]);
+
+  let r3 = await manual(2, 'Донка Иванова', null, '0888555111');
+  ok('a booking she types is confirmed', r3.rows[0].status === 'confirmed', r3.rows[0].status);
+  ok('and it counts against the seats', r3.rows[0].seats_left === 1, `${r3.rows[0].seats_left} left`);
+
+  ok('no email and no phone is allowed for those rows',
+     (await manual(1, 'Само Име')).rows[0].status === 'confirmed');
+
+  const consent = await db.query(
+    `select count(*)::int as n from registrations where source = 'manual' and consent_at is not null`);
+  ok('and none of them claims a consent that was never given', consent.rows[0].n === 0,
+     `${consent.rows[0].n} manual rows with a consent timestamp`);
+
+  r3 = await manual(1, 'Закъснял');
+  ok('past capacity she is told they are on the waiting list', r3.rows[0].status === 'waitlist', r3.rows[0].status);
+
+  // a draft workshop is fine by hand - she is writing down people who have
+  // already told her they are coming - but the form still refuses one
+  ok('the public form still refuses a workshop that is not published',
+     await fails(() => db.query(
+       `select * from register_for_event($1,'Външен','a@b.co','0888123456',1,null)`, [id3]), 'event_not_published'));
+
+  ok('a manual booking still needs a name',
+     await fails(() => manual(1, 'X'), 'invalid_name'));
+  ok('and a sane number of places',
+     await fails(() => manual(99, 'Много хора'), 'invalid_people_count'));
+
+  // the checks that protect rows coming from the site are untouched
+  ok('rows from the site still need a real email',
+     await fails(() => db.query(
+       `insert into registrations (event_id, full_name, email, phone) values ($1,'Тест','няма-маймунка','0888123456')`,
+       [id3]), 'registrations_email_check'));
+}
 
 await db.close();
 let failed = 0;

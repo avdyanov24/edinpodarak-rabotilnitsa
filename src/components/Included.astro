@@ -7,15 +7,19 @@ import { included } from '../data/site';
   <div class="wrap inc__grid">
     <div class="inc__media">
       <div class="inc__stack">
-        <!-- resting state: what is on the table before anyone touches it -->
+        <!-- Resting state: what is on the table before anyone touches it.
+             This was a stock photograph of someone throwing on a wheel, which
+             contradicted every word next to it - „мачкаш, изтъняваш, вдигаш
+             стените“ is hand-building, and there is no wheel in her shop. It
+             is her own slab and her own hands now. -->
         <img
           class="inc__layer inc__video"
-          src={u("/media/workshop/oformyane.webp")}
+          src={u("/media/her/otpechatak.webp")}
           alt=""
           aria-hidden="true"
           loading="lazy"
           decoding="async"
-          width="1300" height="867"
+          width="430" height="308"
         />
 
         {included.items.map((item, i) => (
@@ -79,7 +83,9 @@ import { included } from '../data/site';
   .inc__media { position: sticky; top: 6rem; max-width: 28rem; }
   .inc__stack {
     position: relative;
-    aspect-ratio: 4 / 5;
+    /* Landscape, because her photographs are: a 4:5 box cropped the hands
+       and half the slab out of the resting picture. */
+    aspect-ratio: 4 / 3;
     border-radius: 6px;
     overflow: hidden;
     background: var(--forest-dp);

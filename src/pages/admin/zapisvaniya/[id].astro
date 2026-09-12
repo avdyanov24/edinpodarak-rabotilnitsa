@@ -1,7 +1,7 @@
 ---
 import Admin from '../../../layouts/Admin.astro';
 import { readSession, guard } from '../../../lib/auth';
-import { db, type RegistrationStatus } from '../../../lib/db';
+import { db, DbError, type RegistrationStatus } from '../../../lib/db';
 import { fmtDateFull, fmtTime, availability } from '../../../lib/format';
 
 export const prerender = false;
@@ -14,14 +14,48 @@ const { id } = Astro.params;
 const event = await db.adminGetEvent(id!);
 if (!event) return Astro.redirect('/admin', 302);
 
+let addError = '';
+let added = Astro.url.searchParams.get('dobaven');
+
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
-  const regId = String(form.get('reg_id') ?? '');
-  const status = String(form.get('status') ?? '') as RegistrationStatus;
-  if (regId && ['confirmed', 'waitlist', 'cancelled', 'attended'].includes(status)) {
-    await db.adminSetRegistrationStatus(regId, status);
+
+  // Most of her places still get taken by phone or on Instagram. Without
+  // somewhere to put those people the site showed eight free seats for a
+  // workshop that was nearly full, and the list she takes to the table was
+  // missing half the names.
+  if (form.get('action') === 'add') {
+    const name = String(form.get('full_name') ?? '').trim();
+    const people = Number(form.get('people_count') ?? 1);
+    if (name.length < 2) {
+      addError = 'Напиши името - поне две букви.';
+    } else if (!Number.isInteger(people) || people < 1 || people > 10) {
+      addError = 'Броят места трябва да е между 1 и 10.';
+    } else {
+      try {
+        const res = await db.adminAddRegistration({
+          event_id: id!,
+          full_name: name,
+          email: String(form.get('email') ?? '').trim() || null,
+          phone: String(form.get('phone') ?? '').trim() || null,
+          people_count: people,
+          note: String(form.get('note') ?? '').trim() || null,
+        });
+        return Astro.redirect(`/admin/zapisvaniya/${id}?dobaven=${res.status}`, 302);
+      } catch (e) {
+        addError = e instanceof DbError && e.code === 'invalid_people_count'
+          ? 'Броят места трябва да е между 1 и 10.'
+          : 'Не успях да го запиша. Пробвай пак.';
+      }
+    }
+  } else {
+    const regId = String(form.get('reg_id') ?? '');
+    const status = String(form.get('status') ?? '') as RegistrationStatus;
+    if (regId && ['confirmed', 'waitlist', 'cancelled', 'attended'].includes(status)) {
+      await db.adminSetRegistrationStatus(regId, status);
+    }
+    return Astro.redirect(`/admin/zapisvaniya/${id}`, 302);
   }
-  return Astro.redirect(`/admin/zapisvaniya/${id}`, 302);
 }
 
 const rows = await db.adminListRegistrations(id!);
@@ -29,7 +63,7 @@ const rows = await db.adminListRegistrations(id!);
 // The list she takes to the venue.
 if (Astro.url.searchParams.get('csv') === '1') {
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const head = ['Име', 'Телефон', 'Имейл', 'Места', 'Статус', 'Бележка', 'Записан на'];
+  const head = ['Име', 'Телефон', 'Имейл', 'Места', 'Статус', 'Бележка', 'Записан на', 'Откъде'];
   const label: Record<string, string> = {
     confirmed: 'Потвърдено', waitlist: 'Чакащ', cancelled: 'Отказано', attended: 'Присъствал',
   };
@@ -37,6 +71,7 @@ if (Astro.url.searchParams.get('csv') === '1') {
     r.full_name, r.phone, r.email, r.people_count,
     label[r.status] ?? r.status, r.note ?? '',
     new Date(r.created_at).toLocaleString('bg-BG', { timeZone: 'Europe/Sofia' }),
+    r.source === 'manual' ? 'на ръка' : 'от сайта',
   ].map(esc).join(','));
 
   // BOM so Excel opens the Cyrillic correctly
@@ -78,6 +113,52 @@ const sections: { key: keyof typeof groups; title: string; hint: string }[] = [
     </div>
   </div>
 
+  {added && (
+    <p class="flash">
+      {added === 'waitlist'
+        ? 'Записах го при чакащите - местата вече са пълни.'
+        : 'Записах го. Мястото е заето и на сайта.'}
+    </p>
+  )}
+
+  <details class="card add" open={Boolean(addError)}>
+    <summary class="add__summary">
+      <span>+ Добави човек на ръка</span>
+      <span class="sub">За тези, които са ти писали или се обадили</span>
+    </summary>
+    <form method="POST" class="add__form">
+      <input type="hidden" name="action" value="add" />
+      <label class="fld fld--wide">
+        <span>Име <i>*</i></span>
+        <input name="full_name" required minlength="2" placeholder="Мария Петрова" />
+      </label>
+      <label class="fld">
+        <span>Телефон</span>
+        <input name="phone" inputmode="tel" placeholder="0888 123 456" />
+      </label>
+      <label class="fld">
+        <span>Имейл</span>
+        <input name="email" type="email" placeholder="по желание" />
+      </label>
+      <label class="fld fld--narrow">
+        <span>Места</span>
+        <input name="people_count" type="number" min="1" max="10" value="1" />
+      </label>
+      <label class="fld fld--wide">
+        <span>Бележка</span>
+        <input name="note" placeholder="напр. плаща на място, идва с приятелка" />
+      </label>
+      <div class="add__foot">
+        <button class="btn" type="submit">Добави</button>
+        <p class="sub">
+          Не му пращам имейл - ти вече си говорила с него. Ако местата свършат,
+          отива при чакащите.
+        </p>
+      </div>
+      {addError && <p class="add__err">{addError}</p>}
+    </form>
+  </details>
+
   {rows.length === 0 && (
     <div class="card empty">
       <h2>Още никой не се е записал.</h2>
@@ -100,11 +181,14 @@ const sections: { key: keyof typeof groups; title: string; hint: string }[] = [
             <tr>
               <td>
                 <strong>{r.full_name}</strong>
+                {r.source === 'manual' && <span class="by-hand">на ръка</span>}
                 <span class="meta">{new Date(r.created_at).toLocaleDateString('bg-BG', { timeZone: 'Europe/Sofia' })}</span>
               </td>
               <td>
-                <a href={`tel:${r.phone}`}>{r.phone}</a>
-                <span class="meta"><a href={`mailto:${r.email}`}>{r.email}</a></span>
+                {r.phone
+                  ? <a href={`tel:${r.phone}`}>{r.phone}</a>
+                  : <span class="meta">-</span>}
+                {r.email && <span class="meta"><a href={`mailto:${r.email}`}>{r.email}</a></span>}
               </td>
               <td>{r.people_count}</td>
               <td class="note-cell">{r.note}</td>
@@ -130,6 +214,87 @@ const sections: { key: keyof typeof groups; title: string; hint: string }[] = [
   ))}
 
   <style>
+    /* --- adding somebody she booked herself --- */
+    .flash {
+      margin: 0 0 1.2rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 6px;
+      background: color-mix(in oklab, var(--moss) 14%, transparent);
+      border: 1px solid color-mix(in oklab, var(--moss) 35%, transparent);
+      font-size: 0.9rem;
+    }
+    .add { margin-bottom: 1.4rem; padding: 0; }
+    .add__summary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2rem 0.9rem;
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+    }
+    .add__summary::-webkit-details-marker { display: none; }
+    .add__summary:hover { color: var(--moss); }
+    .add[open] .add__summary { border-bottom: 1px solid var(--rule-soft); }
+
+    .add__form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+      gap: 0.9rem 1rem;
+      padding: 1.2rem;
+    }
+    .fld { display: grid; gap: 0.3rem; min-width: 0; }
+    .fld--wide { grid-column: 1 / -1; }
+    .fld--narrow { max-width: 7rem; }
+    .fld > span { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+    .fld i { color: var(--clay-ink); font-style: normal; }
+    .fld input {
+      padding: 0.62rem 0.75rem;
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      background: var(--paper);
+      font: inherit;
+      font-size: 0.95rem;
+      min-width: 0;
+    }
+    .fld input:focus-visible { outline: 2px solid var(--moss); outline-offset: 1px; }
+    /* She fills this in on her phone, standing in the shop. */
+    @media (pointer: coarse) {
+      .fld input { padding-block: 0.8rem; font-size: 1rem; }
+      .add__summary { padding-block: 1.15rem; }
+    }
+
+    .add__foot {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem 1rem;
+    }
+    .add__foot .sub { margin: 0; max-width: 44ch; }
+    .add__err {
+      grid-column: 1 / -1;
+      margin: 0;
+      color: var(--clay-ink);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    /* she needs to see at a glance which names the site brought her */
+    .by-hand {
+      display: inline-block;
+      margin-left: 0.45rem;
+      padding: 0.1em 0.5em;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--brass) 20%, transparent);
+      color: #6B5520;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      vertical-align: 0.12em;
+    }
+
     .head-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .group { margin-bottom: 1.25rem; overflow: hidden; }
     .group__head { padding: 1rem 0.75rem 0.5rem; }

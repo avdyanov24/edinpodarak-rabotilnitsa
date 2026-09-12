@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type {
   Db, WorkshopEvent, Registration, RegistrationStatus,
   RegisterInput, RegisterResult, CancelResult,
+  ManualInput,
 } from './types';
 import { DbError } from './types';
 import { seedEvents } from '../../data/events';
@@ -116,6 +117,7 @@ export const localDb: Db = {
         note: input.note?.trim() || null,
         status,
         consent_at: new Date().toISOString(),
+        source: 'site',
         cancel_token: randomUUID(),
         created_at: new Date().toISOString(),
       };
@@ -226,6 +228,44 @@ export const localDb: Db = {
     return db.registrations
       .filter((r) => !eventId || r.event_id === eventId)
       .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  },
+
+  adminAddRegistration(input: ManualInput) {
+    return exclusive(async () => {
+      const db = await read();
+      if (input.full_name.trim().length < 2) throw new DbError('invalid_name');
+      if (input.people_count < 1 || input.people_count > 10) throw new DbError('invalid_people_count');
+
+      const event = db.events.find((e) => e.id === input.event_id);
+      if (!event) throw new DbError('unknown_event');
+
+      // Deliberately no published/open check: she is entitled to write down
+      // people who have already told her they are coming. Capacity is the one
+      // rule that still applies, because true counts are the point.
+      const left = Math.max(event.capacity - seatsTaken(db, event.id), 0);
+      const status: RegistrationStatus = input.people_count <= left ? 'confirmed' : 'waitlist';
+
+      db.registrations.push({
+        id: randomUUID(),
+        event_id: event.id,
+        full_name: input.full_name.trim(),
+        email: input.email?.trim().toLowerCase() || '',
+        phone: input.phone?.trim() || '',
+        people_count: input.people_count,
+        note: input.note?.trim() || null,
+        status,
+        consent_at: null,
+        source: 'manual',
+        cancel_token: randomUUID(),
+        created_at: new Date().toISOString(),
+      });
+      await write(db);
+
+      return {
+        status,
+        seats_left: Math.max(left - (status === 'confirmed' ? input.people_count : 0), 0),
+      };
+    });
   },
 
   adminSetRegistrationStatus(id: string, status: RegistrationStatus) {
