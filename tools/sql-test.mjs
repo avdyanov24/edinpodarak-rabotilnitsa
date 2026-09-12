@@ -22,7 +22,7 @@ await db.exec(`
   end $$;
 `);
 
-for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts', '0006_manual_bookings']) {
+for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts', '0006_manual_bookings', '0007_minimum']) {
   try {
     await db.exec(readFileSync(`supabase/migrations/${f}.sql`, 'utf8'));
     ok(`migration ${f} applies`, true);
@@ -189,6 +189,39 @@ ok('old attempts are cleaned up', left.rows[0].n === 0, `${left.rows[0].n} stale
      await fails(() => db.query(
        `insert into registrations (event_id, full_name, email, phone) values ($1,'Тест','няма-маймунка','0888123456')`,
        [id3]), 'registrations_email_check'));
+}
+
+// --- the smallest group she will run a workshop for --------------------------
+// Three people, her rule. The number must never stand between somebody and a
+// seat - a date gets to three precisely by letting people book below it.
+{
+  const ev4 = await db.query(`
+    insert into events (slug, status, title, starts_at, capacity)
+    values ('minimum', 'published', 'Минимум', now() + interval '14 days', 8) returning id`);
+  const id4 = ev4.rows[0].id;
+
+  const row = (await db.query(`select * from list_published_events() where slug = 'minimum'`)).rows[0];
+  ok('a workshop starts with her minimum of three', row.min_participants === 3, String(row.min_participants));
+  ok('and the public list carries it, or the site cannot say it',
+     Object.prototype.hasOwnProperty.call(row, 'min_participants'));
+
+  const first = await db.query(
+    `select * from register_for_event($1,'Първа','a@b.co','0888123456',1,null)`, [id4]);
+  ok('the first person can book a workshop that is below the minimum',
+     first.rows[0].status === 'confirmed', first.rows[0].status);
+
+  await db.query(`update events set min_participants = 5 where id = $1`, [id4]);
+  const changed = (await db.query(`select min_participants from events where id = $1`, [id4])).rows[0];
+  ok('she can set a different minimum per workshop', changed.min_participants === 5);
+
+  ok('but not a minimum of nobody',
+     await fails(() => db.query(`update events set min_participants = 0 where id = $1`, [id4]),
+                 'min_participants_check'));
+
+  // anon reads the list; the grant has to survive the function being replaced
+  const granted = await db.query(
+    `select has_function_privilege('anon', 'public.list_published_events()', 'execute') as ok`);
+  ok('anon can still read the published list after 0007 replaced it', granted.rows[0].ok === true);
 }
 
 await db.close();

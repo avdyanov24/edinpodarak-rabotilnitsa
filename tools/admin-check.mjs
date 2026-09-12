@@ -40,6 +40,11 @@ await p.fill('#summary', 'Правим композиция от мъх и пр�
 await p.fill('#description', 'Два часа, в които сглобяваш своя пролетна рамка.');
 await p.fill('#starts_at', '2027-04-18T18:30');
 await p.fill('#capacity', '6');
+// Her rule: three at the table at least. A new workshop should arrive with it
+// already filled in, so she never has to think about the number again.
+ok('a new workshop starts at her minimum of three',
+   (await p.inputValue('#min_participants')) === '3', await p.inputValue('#min_participants'));
+await p.fill('#min_participants', '2');
 await p.fill('#price', '35');
 await p.fill('#venue_address', 'ул. „Тестова“ 1');
 await p.fill('#includes', 'Рамка\nМъх\nЦветя');
@@ -76,6 +81,13 @@ ok('seats are counted in the header',
    (await p.locator('.sub').first().innerText()).includes('4 от 6'),
    await p.locator('.sub').first().innerText());
 ok('the waiting list is a separate group', (await p.locator('text=Чакащи').count()) > 0);
+// „4 / 6“ does not tell her whether the date is on. The line under it does.
+ok('the panel says the minimum is together',
+   /Минимумът от 2 души е събран/.test(await p.locator('.minline').innerText()),
+   await p.locator('.minline').innerText());
+ok('and the edit form kept the minimum she typed',
+   await p.request.get(`${B}/admin/rabotilnitsa/${eventId}`).then(async (r) =>
+     /id="min_participants"[^>]*value="2"/.test(await r.text())));
 
 // ---------- the CSV she takes to the venue ----------
 const csv = await p.request.get(`${B}/admin/zapisvaniya/${eventId}?csv=1`);

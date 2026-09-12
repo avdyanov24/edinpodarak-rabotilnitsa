@@ -45,6 +45,8 @@ export function confirmationEmail(
   name: string,
   cancelUrl: string,
   waitlisted: boolean,
+  /** Set only while the group is short of her minimum of three. */
+  minNote: string | null = null,
 ) {
   if (waitlisted) {
     return {
@@ -76,6 +78,7 @@ export function confirmationEmail(
         <tr><td style="padding-right:14px;color:#5C6B60">Цена</td><td>${fmtPrice(event.price_cents)} - плащаш на място</td></tr>
       </table>
       ${event.bring_note ? `<p style="font-size:15px;line-height:1.6">${event.bring_note}</p>` : ''}
+      ${minNote ? `<p style="font-size:14px;line-height:1.6;padding:12px 14px;background:#F1EADB;border-radius:6px">${minNote}</p>` : ''}
       <p style="font-size:13px;color:#5C6B60">
         Ако нещо се промени: <a href="${cancelUrl}" style="color:#3E6B43">откажи мястото си</a>,
         за да го подарим на някой от чакащите.
@@ -85,7 +88,7 @@ export function confirmationEmail(
 
 export function noticeEmail(event: WorkshopEvent, reg: {
   full_name: string; email: string; phone: string; people_count: number; note?: string | null;
-}, status: string) {
+}, status: string, progress: string | null = null) {
   return {
     subject: `${status === 'waitlist' ? 'Чакащ' : 'Ново записване'}: ${event.title}`,
     html: shell(`
@@ -99,7 +102,8 @@ export function noticeEmail(event: WorkshopEvent, reg: {
         <tr><td style="padding-right:14px;color:#5C6B60">Имейл</td><td>${reg.email}</td></tr>
         <tr><td style="padding-right:14px;color:#5C6B60">Места</td><td>${reg.people_count}</td></tr>
         ${reg.note ? `<tr><td style="padding-right:14px;color:#5C6B60">Бележка</td><td>${reg.note}</td></tr>` : ''}
-      </table>`),
+      </table>
+      ${progress ? `<p style="font-size:14px;color:#5C6B60">${progress}</p>` : ''}`),
   };
 }
 

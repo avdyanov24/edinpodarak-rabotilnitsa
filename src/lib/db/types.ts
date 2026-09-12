@@ -20,6 +20,8 @@ export interface WorkshopEvent {
   price_note: string;
   capacity: number;
   seats_taken: number;
+  /** Below this many people the workshop does not run. Never blocks a booking. */
+  min_participants: number;
   min_age: number | null;
   includes: string[];
   bring_note: string | null;

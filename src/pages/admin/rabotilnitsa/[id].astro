@@ -31,7 +31,7 @@ function blank(): Partial<WorkshopEvent> {
     venue_map_url: 'https://maps.google.com/?q=ул.+Брегалница+1,+Гоце+Делчев',
     city: 'Гоце Делчев',
     price_cents: 2500, currency: 'EUR', price_note: 'Всички материали са включени.',
-    capacity: 8, seats_taken: 0, min_age: 12,
+    capacity: 8, seats_taken: 0, min_participants: 3, min_age: 12,
     includes: [], bring_note: null, host_note: 'Води Злата Златкова, майстор керамик',
     waitlist_enabled: true,
   };
@@ -88,12 +88,17 @@ if (Astro.request.method === 'POST') {
     currency: 'EUR',
     price_note: String(form.get('price_note') ?? '').trim(),
     capacity: Math.max(1, Number(form.get('capacity') ?? 12)),
+    min_participants: Math.max(1, Number(form.get('min_participants') ?? 3)),
     min_age: form.get('min_age') ? Number(form.get('min_age')) : null,
     includes: String(form.get('includes') ?? '').split('\n').map((s) => s.trim()).filter(Boolean),
     bring_note: String(form.get('bring_note') ?? '').trim() || null,
     host_note: String(form.get('host_note') ?? '').trim() || null,
     waitlist_enabled: form.get('waitlist_enabled') === 'on',
   };
+
+  // A minimum above the capacity is a workshop that can never run; she would
+  // only ever hit it by typing in the wrong box.
+  payload.min_participants = Math.min(payload.min_participants!, payload.capacity!);
 
   if (!payload.title) error = 'Работилницата има нужда от заглавие.';
   else if (!form.get('starts_at')) error = 'Избери дата и час.';
@@ -217,6 +222,12 @@ const startsLocal = isoToLocalInput(event.starts_at ?? new Date().toISOString())
           )}
         </div>
         <div class="field">
+          <label for="min_participants">Минимум хора</label>
+          <input id="min_participants" name="min_participants" type="number" min="1"
+                 value={event.min_participants ?? 3} />
+          <span class="field__hint">Под този брой работилницата не се провежда.</span>
+        </div>
+        <div class="field">
           <label for="min_age">Възраст от</label>
           <input id="min_age" name="min_age" type="number" min="0" max="120" value={event.min_age ?? ''}
                  placeholder="18" />
@@ -230,7 +241,7 @@ const startsLocal = isoToLocalInput(event.starts_at ?? new Date().toISOString())
       <div class="field">
         <label for="includes">Какво е включено (по едно на ред)</label>
         <textarea id="includes" name="includes" rows="5"
-                  placeholder={'Глина и глеч\nИнструменти и престилка\nДвете печения след работилницата\nЧаша лимонадавята'}>{(event.includes ?? []).join('\n')}</textarea>
+                  placeholder={'Глина и глеч\nИнструменти и престилка\nДвете печения след работилницата\nЧаша домашна лимонада'}>{(event.includes ?? []).join('\n')}</textarea>
       </div>
       <div class="row">
         <div class="field">

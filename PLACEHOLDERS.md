@@ -41,6 +41,12 @@ are no longer guesses:
   it is one line in `src/data/events.ts`.
 - **25 €** - confirmed.
 - **Гоце Делчев** - confirmed.
+- **От 3 до 8 души в работилница.** „максимум 8 човека може да съберем в
+  работилница и минимум 3“, 12 September 2026. The maximum was already the
+  capacity; the minimum is now a field on every workshop (`min_participants`,
+  default 3) and is said out loud on the site, in the confirmation and in the
+  terms. What is still unconfirmed is **how late she decides** - the site says
+  „ако не се съберем, ще ти се обадя“ without naming a deadline.
 - **The next workshop: четвъртък, 17 септември, 18:00.** It is live on the
   site and open for booking.
 
@@ -62,9 +68,9 @@ under a minute.
 | `src/data/site.ts` | The four steps of „Как протича“ and the clock times on them |
 | `src/data/site.ts` | Everything under „Какво е включено“, including that glazing and both firings are in the price |
 | `src/data/site.ts` | The three testimonials - plausible, but nobody said them |
-| `src/data/site.ts` | The age limit (12) and the group sizes under „За групи“ (6–25) |
+| `src/data/site.ts` | The age limit (12) and the group sizes under „За групи“ (6–25). **The 25 now conflicts with her „максимум 8 в работилница“** - presumably private groups at their own venue, but it needs one word from her |
 | `src/pages/poveritelnost.astro` | Legal identity is `[ТЪРГОВСКО НАИМЕНОВАНИЕ]`, `[ЕИК]`, `[АДРЕС]` |
-| `src/pages/usloviya.astro` | The cancellation terms |
+| `src/pages/usloviya.astro` | The cancellation terms. The minimum of three in them is hers; the wording „до деня преди“ is not |
 
 **Most of the photography is now hers**, cut out of her own event posters -
 the botanical plate, the hand-painted blue cup, the leaf pressed into a slab,

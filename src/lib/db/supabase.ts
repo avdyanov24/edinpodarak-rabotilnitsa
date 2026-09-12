@@ -26,6 +26,8 @@ function rowToEvent(r: Record<string, any>): WorkshopEvent {
     gallery: Array.isArray(r.gallery) ? r.gallery : [],
     includes: Array.isArray(r.includes) ? r.includes : [],
     seats_taken: r.seats_taken ?? 0,
+    // A database that has not had 0007 yet returns nothing for this.
+    min_participants: r.min_participants ?? 3,
   } as WorkshopEvent;
 }
 

@@ -31,6 +31,12 @@ ok('dialog shows the right event',
   await page.locator('[data-su-title]').innerText());
 ok('seats shown in dialog', /места|място/.test(await page.locator('[data-su-seats]').innerText()),
   await page.locator('[data-su-seats]').innerText());
+// Three people is the smallest group she will run a workshop for. Whoever
+// books the first place has to be told that here, not by telephone later.
+ok('the dialog says how many it takes for the workshop to run',
+  await page.locator('[data-su-min]').isVisible()
+  && /3 записани/.test(await page.locator('[data-su-min]').innerText()),
+  await page.locator('[data-su-min]').innerText().catch(() => 'hidden'));
 await page.screenshot({ path: `${out}/flow-1-dialog.png` });
 
 // submit empty -> Bulgarian errors, no request
@@ -61,7 +67,8 @@ ok('consent required', (await page.locator('[data-err="consent"]').innerText()).
 await page.check('[name="consent"]');
 await page.locator('[data-su-submit]').click();
 await page.waitForSelector('.su__msg', { timeout: 8000 });
-const msg = await page.locator('.su__msg').innerText();
+let msg = await page.locator('.su__msg').innerText();
+const msgAfter = () => msg;
 ok('booking confirmed', /мястото е твое/i.test(msg), msg.replace(/\n/g, ' ').slice(0, 90));
 // The whole success path sits inside the request's try/catch, so a bug in it
 // shows the visitor „Нещо се обърка.“ over a booking that actually went
@@ -78,6 +85,9 @@ ok('the seat count corrects itself straight away',
   /7/.test(await page.locator('[data-su-seats]').innerText()),
   await page.locator('[data-su-seats]').innerText());
 ok('form hidden after success', await page.locator('.su__fields').isHidden());
+ok('and the confirmation is honest that the date is not certain yet',
+  /тръгва при 3 записани/.test(msgAfter()) && /ще преместим датата/.test(msgAfter()),
+  msgAfter().replace(/\n/g, ' ').slice(0, 140));
 await page.screenshot({ path: `${out}/flow-3-success.png` });
 
 // ---------- gallery lightbox ----------
@@ -191,6 +201,21 @@ const ld = await e.locator('script[type="application/ld+json"]').innerText();
 const parsed = JSON.parse(ld);
 ok('Event JSON-LD present', parsed['@type'] === 'Event', `${parsed['@type']} / ${parsed.startDate}`);
 ok('offer priced in EUR', parsed.offers?.priceCurrency === 'EUR', String(parsed.offers?.price));
+
+// The same honesty on the page people reach from her story link. By now the
+// booking above has taken one of the eight places, so two are still missing.
+const minLine = e.locator('[data-min-note]');
+const minText = await minLine.innerText().catch(() => '');
+const seated = await e.locator('.ev__heroText .seats__stool.is-taken').count();
+ok('the workshop page says whether the date is happening',
+  await minLine.isVisible() && /(тръгва при 3 записани|Групата е събрана)/.test(minText),
+  minText.slice(0, 120));
+// The sentence and the stools drawn beside it are two views of one number.
+ok('and it agrees with the seats drawn next to it',
+  seated >= 3 ? /Групата е събрана/.test(minText) : /тръгва при 3 записани/.test(minText),
+  `${seated} seated · ${minText.slice(0, 60)}`);
+ok('and it reads as something to act on, not as body text',
+  await minLine.evaluate((el) => getComputedStyle(el).color !== getComputedStyle(el.closest('.ev__heroText').querySelector('.ev__summary')).color));
 await e.close();
 
 await browser.close();

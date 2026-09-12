@@ -34,6 +34,7 @@ export const seedEvents: WorkshopEvent[] = [
     price_cents: 2500,
     price_note: 'Всичко е включено - материали, изпичане и домашна лимонада.',
     capacity: 8,
+    min_participants: 3,
     seats_taken: 0,
     min_age: 12,
     includes: [
@@ -69,6 +70,7 @@ export const seedEvents: WorkshopEvent[] = [
     price_cents: 2500,
     price_note: 'Всичко е включено - материали, изпичане и домашна лимонада.',
     capacity: 8,
+    min_participants: 3,
     seats_taken: 0,
     min_age: 12,
     includes: [
@@ -104,6 +106,7 @@ export const seedEvents: WorkshopEvent[] = [
     price_cents: 2500,
     price_note: 'Всичко е включено - материали, изпичане и домашна лимонада.',
     capacity: 8,
+    min_participants: 3,
     seats_taken: 0,
     min_age: 12,
     includes: [

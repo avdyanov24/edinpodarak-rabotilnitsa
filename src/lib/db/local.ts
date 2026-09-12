@@ -77,7 +77,9 @@ const seatsTaken = (db: Shape, eventId: string) =>
     .reduce((n, r) => n + r.people_count, 0);
 
 const withSeats = (db: Shape, e: WorkshopEvent): WorkshopEvent =>
-  ({ ...e, seats_taken: seatsTaken(db, e.id) });
+  // A db.json written before the minimum existed has no min_participants;
+  // fall back to her rule rather than rendering „тръгва при undefined“.
+  ({ ...e, seats_taken: seatsTaken(db, e.id), min_participants: e.min_participants ?? 3 });
 
 export const localDb: Db = {
   kind: 'local',

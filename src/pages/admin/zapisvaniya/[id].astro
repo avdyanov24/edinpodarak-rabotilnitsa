@@ -2,7 +2,7 @@
 import Admin from '../../../layouts/Admin.astro';
 import { readSession, guard } from '../../../lib/auth';
 import { db, DbError, type RegistrationStatus } from '../../../lib/db';
-import { fmtDateFull, fmtTime, availability } from '../../../lib/format';
+import { fmtDateFull, fmtTime, availability, minimum } from '../../../lib/format';
 
 export const prerender = false;
 
@@ -84,6 +84,7 @@ if (Astro.url.searchParams.get('csv') === '1') {
 }
 
 const a = availability(event.capacity, event.seats_taken, event.registrations_open);
+const m = minimum(event.seats_taken, event.min_participants);
 const groups = {
   confirmed: rows.filter((r) => r.status === 'confirmed'),
   waitlist: rows.filter((r) => r.status === 'waitlist'),
@@ -105,6 +106,16 @@ const sections: { key: keyof typeof groups; title: string; hint: string }[] = [
       <p class="sub">
         {fmtDateFull(event.starts_at)}, {fmtTime(event.starts_at)} ч. ·
         <strong>{event.seats_taken} от {event.capacity}</strong> места · {a.label}
+      </p>
+      {/* „3 / 8“ does not tell her whether the date is happening. This does. */}
+      <p class={`minline${m.reached ? ' is-ok' : ''}`}>
+        {m.reached
+          ? `Минимумът от ${event.min_participants} души е събран - работилницата се провежда.`
+          : event.seats_taken === 0
+            ? `Още никой не се е записал. Работилницата се провежда при поне ${event.min_participants} души.`
+            : m.needed === 1
+              ? `Още един човек до минимума от ${event.min_participants}. Под него работилницата не се провежда.`
+              : `Още ${m.needed} души до минимума от ${event.min_participants}. Под него работилницата не се провежда.`}
       </p>
     </div>
     <div class="head-actions">
@@ -214,6 +225,15 @@ const sections: { key: keyof typeof groups; title: string; hint: string }[] = [
   ))}
 
   <style>
+    /* --- is this date happening? --- */
+    .minline {
+      margin: 0.5rem 0 0;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--clay);
+    }
+    .minline.is-ok { color: var(--moss); font-weight: 500; }
+
     /* --- adding somebody she booked herself --- */
     .flash {
       margin: 0 0 1.2rem;

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { availability } from '../../lib/format';
+import { availability, minimum } from '../../lib/format';
 import { db, DbError } from '../../lib/db';
 import { confirmationEmail, noticeEmail, deliver, ownerAddress } from '../../lib/email';
 import { bookingsPersist } from '../../lib/env';
@@ -58,9 +58,17 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
     if (event && result.cancel_token) {
       const cancelUrl = new URL(`/otkazhi/${result.cancel_token}`, url.origin).toString();
       const waitlisted = result.status === 'waitlist';
+      const taken = event.capacity - result.seats_left;
+      const short = minimum(taken, event.min_participants);
+      // Her own copy says where the date stands, so she can see from the
+      // notification alone whether it is happening.
+      const progress = short.reached
+        ? `Записани са ${taken} от ${event.capacity} - минимумът от ${event.min_participants} е събран.`
+        : `Записани са ${taken} от ${event.capacity}. До минимума от ${event.min_participants} `
+          + (short.needed === 1 ? 'остава още един.' : `остават още ${short.needed}.`);
       await Promise.allSettled([
-        deliver(email, confirmationEmail(event, full_name, cancelUrl, waitlisted)),
-        deliver(ownerAddress(), noticeEmail(event, { full_name, email, phone, people_count, note }, result.status)),
+        deliver(email, confirmationEmail(event, full_name, cancelUrl, waitlisted, short.reached ? null : short.note)),
+        deliver(ownerAddress(), noticeEmail(event, { full_name, email, phone, people_count, note }, result.status, progress)),
       ]);
     }
 
@@ -69,6 +77,11 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
     // „Готово, мястото е твое“, and so did the card behind it.
     const seats = event
       ? availability(event.capacity, event.capacity - result.seats_left, event.registrations_open)
+      : null;
+
+    // Whether this booking was the one that made the date certain.
+    const min = event
+      ? minimum(event.capacity - result.seats_left, event.min_participants)
       : null;
 
     return json({
@@ -81,6 +94,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
         scarce: seats.scarce,
         full: seats.full,
       },
+      min: min && { needed: min.needed, reached: min.reached, note: min.note, short: min.short },
     });
   } catch (e) {
     const code = e instanceof DbError ? e.code : 'register_failed';
