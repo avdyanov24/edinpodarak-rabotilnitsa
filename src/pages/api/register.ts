@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { availability } from '../../lib/format';
 import { db, DbError } from '../../lib/db';
 import { confirmationEmail, noticeEmail, deliver, ownerAddress } from '../../lib/email';
 import { bookingsPersist } from '../../lib/env';
@@ -63,7 +64,24 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
       ]);
     }
 
-    return json({ status: result.status, cancel_token: result.cancel_token });
+    // The seat count travels back with the answer so the page can correct
+    // itself: without it the dialog still said „Свободни 8 места“ next to
+    // „Готово, мястото е твое“, and so did the card behind it.
+    const seats = event
+      ? availability(event.capacity, event.capacity - result.seats_left, event.registrations_open)
+      : null;
+
+    return json({
+      status: result.status,
+      cancel_token: result.cancel_token,
+      seats_left: result.seats_left,
+      seats: seats && {
+        label: seats.label,
+        left: seats.left,
+        scarce: seats.scarce,
+        full: seats.full,
+      },
+    });
   } catch (e) {
     const code = e instanceof DbError ? e.code : 'register_failed';
     const status = code === 'unknown_event' ? 404

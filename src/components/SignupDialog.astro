@@ -293,11 +293,17 @@ const payload = events.map((e) => ({
 
   .su__status { margin-top: 1.2rem; }
   .su__status:empty { display: none; }
-  .su__msg { padding: 1rem 1.2rem; border-radius: 6px; font-size: var(--step--1); margin: 0; }
-  .su__msg--ok { background: color-mix(in oklab, var(--moss) 16%, transparent); border: 1px solid color-mix(in oklab, var(--moss) 40%, transparent); }
-  .su__msg--wait { background: color-mix(in oklab, var(--brass) 16%, transparent); border: 1px solid color-mix(in oklab, var(--brass) 45%, transparent); }
-  .su__msg--err { background: color-mix(in oklab, var(--clay) 12%, transparent); border: 1px solid color-mix(in oklab, var(--clay) 45%, transparent); }
-  .su__msg strong { display: block; font-family: var(--display); font-size: var(--step-1); margin-bottom: 0.25rem; }
+  /* :global, because this panel is built with innerHTML when the booking
+     comes back. Astro scopes a rule by stamping an attribute on the elements
+     that exist at build time; an element created later never gets it, so
+     every one of these rules was silently missing its target and the
+     confirmation - the one screen the whole site exists for - was rendering
+     as unstyled text with the heading run into the sentence after it. */
+  :global(.su__msg) { padding: 1rem 1.2rem; border-radius: 6px; font-size: var(--step--1); margin: 0; }
+  :global(.su__msg--ok) { background: color-mix(in oklab, var(--moss) 16%, transparent); border: 1px solid color-mix(in oklab, var(--moss) 40%, transparent); }
+  :global(.su__msg--wait) { background: color-mix(in oklab, var(--brass) 16%, transparent); border: 1px solid color-mix(in oklab, var(--brass) 45%, transparent); }
+  :global(.su__msg--err) { background: color-mix(in oklab, var(--clay) 12%, transparent); border: 1px solid color-mix(in oklab, var(--clay) 45%, transparent); }
+  :global(.su__msg strong) { display: block; font-family: var(--display); font-size: var(--step-1); margin-bottom: 0.25rem; }
 
   @media (max-width: 780px) {
     .su { max-height: 92vh; max-height: 92dvh; }
@@ -353,6 +359,51 @@ const payload = events.map((e) => ({
   let lastFocused: HTMLElement | null = null;
 
   const $ = (sel: string) => document.querySelector(sel) as HTMLElement | null;
+
+  /**
+   * Correct every seat count on the page after a booking.
+   *
+   * The dialog and the card behind it both went on saying „Свободни 8
+   * места“ after somebody had just taken one of them, which reads as the
+   * booking not having registered. The wording comes back from the server
+   * so the rules for it live in one place.
+   */
+  function applySeats(eventId: string, next: { label: string; left: number; scarce: boolean; full: boolean } | null) {
+    // Everything below is cosmetic, and it runs inside the same try/catch as
+    // the booking request. A typo in here once turned a booking that had
+    // actually gone through into „Нещо се обърка.“ on screen - the one lie
+    // this page must never tell. Nothing in here may escape.
+    try {
+      applySeatsInner(eventId, next);
+    } catch {
+      /* the seat counts will be right on the next page load */
+    }
+  }
+
+  function applySeatsInner(eventId: string, next: { label: string; left: number; scarce: boolean; full: boolean } | null) {
+    if (!next) return;
+    const ev = data.find((e) => e.id === eventId);
+    if (ev) ev.seats = { ...ev.seats, ...next };
+
+    const pill = document.querySelector<HTMLElement>('[data-su-seats]');
+    if (pill) {
+      pill.textContent = next.label;
+      pill.classList.toggle('is-scarce', next.scarce || next.full);
+    }
+
+    // the card, and the workshop page's own copy of the same thing
+    const card = document.querySelector(`.card:has(button[data-signup="${eventId}"])`)
+      || document.querySelector('.ev__heroText');
+    const block = card?.querySelector<HTMLElement>('.seats');
+    if (!block) return;
+    const label = block.querySelector<HTMLElement>('.seats__label');
+    if (label) label.textContent = next.label;
+    block.classList.toggle('is-scarce', next.scarce && !next.full);
+    block.classList.toggle('is-full', next.full);
+    const stools = [...block.querySelectorAll<SVGElement>('.seats__stool')];
+    const taken = stools.length - next.left;
+    stools.forEach((st, i) => st.classList.toggle('is-taken', i < taken));
+  }
 
   function fill(event: EventLite, waitlist: boolean) {
     current = event;
@@ -531,11 +582,13 @@ const payload = events.map((e) => ({
       if (!res.ok) throw new Error(out?.error ?? 'request_failed');
 
       if (out.status === 'confirmed') {
+        applySeats(current.id, out.seats);
         form.querySelector('.su__fields')?.setAttribute('hidden', '');
         form.querySelector('.su__actions')?.setAttribute('hidden', '');
         say('ok', 'Готово, мястото е твое.',
           `Пратих потвърждение на ${fd.get('email')}. До ден преди работилницата ще получиш и напомняне с адреса.`);
       } else if (out.status === 'waitlist') {
+        applySeats(current.id, out.seats);
         form.querySelector('.su__fields')?.setAttribute('hidden', '');
         form.querySelector('.su__actions')?.setAttribute('hidden', '');
         say('wait', 'Записах те при чакащите.',

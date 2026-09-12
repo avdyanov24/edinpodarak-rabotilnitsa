@@ -67,6 +67,13 @@ export interface CancelResult {
   promoted: number;
 }
 
+/** What a cancellation link points at, without changing anything. */
+export interface TokenLookup {
+  status: Registration['status'];
+  event_title: string;
+  starts_at: string;
+}
+
 /** Both backends implement exactly this. */
 export interface Db {
   readonly kind: 'supabase' | 'local';
@@ -74,6 +81,8 @@ export interface Db {
   listPublishedEvents(): Promise<WorkshopEvent[]>;
   register(input: RegisterInput): Promise<RegisterResult>;
   cancelByToken(token: string): Promise<CancelResult>;
+  /** Read-only: what state is this cancellation link in? */
+  lookupToken(token: string): Promise<TokenLookup | null>;
 
   adminListEvents(): Promise<WorkshopEvent[]>;
   adminGetEvent(id: string): Promise<WorkshopEvent | null>;

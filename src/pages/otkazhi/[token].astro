@@ -28,6 +28,28 @@ if (Astro.request.method === 'POST') {
   } catch (e) {
     state = e instanceof DbError && e.code === 'unknown_token' ? 'unknown' : 'error';
   }
+} else {
+  // The link lives in an email people keep. Opening it a second time used to
+  // ask „Сигурен ли си?“ about a place that had already been given away - and
+  // a mistyped link asked the same question about a booking that never
+  // existed. Reading the token first costs one query and answers honestly.
+  try {
+    const found = await db.lookupToken(token!);
+    if (!found) {
+      state = 'unknown';
+    } else if (found.status === 'cancelled') {
+      state = 'already';
+      title = found.event_title;
+      starts = found.starts_at;
+    } else {
+      title = found.event_title;
+      starts = found.starts_at;
+    }
+  } catch {
+    // A lookup that fails must not stop somebody cancelling: fall through to
+    // the confirmation and let the POST be the authority.
+    state = 'confirm';
+  }
 }
 ---
 
@@ -42,6 +64,9 @@ if (Astro.request.method === 'POST') {
         <>
           <h1 class="cx__title">Сигурен ли си?</h1>
           <p class="cx__lede">
+            {title
+              ? <>Отказваш мястото си за <strong>„{title}“</strong> на {fmtWhen(starts)}{' '}</>
+              : null}
             Ако натиснеш бутона, мястото ти се освобождава и отива при първия
             човек от листа на чакащите.
           </p>

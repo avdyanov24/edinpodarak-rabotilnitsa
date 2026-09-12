@@ -125,6 +125,27 @@ const preview = isPreview();
       } else {
         items.forEach((el) => el.classList.add('is-in'));
       }
+
+      /**
+       * Anchor jumps arrive instantly.
+       *
+       * The observer treats a jump exactly like a slow scroll, so „Галерия“
+       * in the menu dropped you on an empty panel while nine tiles staggered
+       * in behind each other. Whatever you jumped to is already what you
+       * asked for; it should be there when you land.
+       */
+      const jumped = () => {
+        const id = decodeURIComponent(location.hash.slice(1));
+        const target = id && document.getElementById(id);
+        if (!target) return;
+        const here = [target, ...target.querySelectorAll('[data-reveal]')];
+        for (const el of here) {
+          if (!(el instanceof HTMLElement) || !el.hasAttribute('data-reveal')) continue;
+          el.classList.add('is-jumped', 'is-in');
+        }
+      };
+      window.addEventListener('hashchange', jumped);
+      jumped();
     </script>
   </body>
 </html>

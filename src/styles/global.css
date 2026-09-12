@@ -217,6 +217,16 @@ a { color: inherit; }
 }
 .js [data-reveal].is-in { opacity: 1; transform: none; }
 
+/* Jumped to from the menu rather than scrolled to.
+   Clicking „Галерия“ landed you on a blank cream panel for the better part of
+   two seconds while nine tiles took their turn arriving. If somebody asked to
+   be somewhere, put them there: no stagger, and short enough to read as a
+   settle rather than a wait. */
+.js [data-reveal].is-jumped {
+  transition-duration: 0.3s;
+  transition-delay: 0ms;
+}
+
 /* On a phone the same 0.9s reads as sluggish — the page has usually moved on
    before the element has finished arriving. Shorter, a little more travel so
    the movement is legible at speed, and the stagger capped so the last item

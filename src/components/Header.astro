@@ -50,8 +50,14 @@ const nav = [
           <span class="menu__num">0{i + 1}</span>{item.label}
         </a>
       ))}
-      <a class="menu__link" href="#kontakti" style={`--i:${nav.length}`}>
-        <span class="menu__num">0{nav.length + 1}</span>Контакти
+      {/* Private and corporate workshops are a revenue line of hers and the
+          only place they were linked from was the footer. The menu had the
+          room for them: five entries left half a screen empty. */}
+      <a class="menu__link" href="#grupi" style={`--i:${nav.length}`}>
+        <span class="menu__num">0{nav.length + 1}</span>За групи
+      </a>
+      <a class="menu__link" href="#kontakti" style={`--i:${nav.length + 1}`}>
+        <span class="menu__num">0{nav.length + 2}</span>Контакти
       </a>
     </nav>
     <div class="menu__foot">

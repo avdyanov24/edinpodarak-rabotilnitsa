@@ -63,6 +63,20 @@ await page.locator('[data-su-submit]').click();
 await page.waitForSelector('.su__msg', { timeout: 8000 });
 const msg = await page.locator('.su__msg').innerText();
 ok('booking confirmed', /мястото е твое/i.test(msg), msg.replace(/\n/g, ' ').slice(0, 90));
+// The whole success path sits inside the request's try/catch, so a bug in it
+// shows the visitor „Нещо се обърка.“ over a booking that actually went
+// through. Assert the state, not just that some message appeared.
+ok('the confirmation is the success panel, not the error one',
+  (await page.locator('.su__msg').getAttribute('class'))?.includes('su__msg--ok'),
+  await page.locator('.su__msg').getAttribute('class'));
+ok('and it is styled rather than bare text',
+  await page.locator('.su__msg').evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return parseFloat(cs.paddingTop) > 8 && cs.backgroundColor !== 'rgba(0, 0, 0, 0)';
+  }));
+ok('the seat count corrects itself straight away',
+  /7/.test(await page.locator('[data-su-seats]').innerText()),
+  await page.locator('[data-su-seats]').innerText());
 ok('form hidden after success', await page.locator('.su__fields').isHidden());
 await page.screenshot({ path: `${out}/flow-3-success.png` });
 

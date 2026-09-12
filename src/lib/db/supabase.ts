@@ -56,6 +56,24 @@ export const supabaseDb: Db = {
     return { status: row.status, cancel_token: row.cancel_token, seats_left: row.seats_left };
   },
 
+  async lookupToken(token: string) {
+    // Two plain queries rather than a nested select, so this does not depend
+    // on how PostgREST happens to name the relationship.
+    const { data: reg, error } = await admin()
+      .from('registrations')
+      .select('status, event_id')
+      .eq('cancel_token', token)
+      .maybeSingle();
+    if (error || !reg) return null;
+    const { data: ev } = await admin()
+      .from('events')
+      .select('title, starts_at')
+      .eq('id', reg.event_id)
+      .maybeSingle();
+    if (!ev) return null;
+    return { status: reg.status, event_title: ev.title, starts_at: ev.starts_at };
+  },
+
   async cancelByToken(token: string): Promise<CancelResult> {
     const { data, error } = await admin().rpc('cancel_registration', { p_token: token });
     if (error) {

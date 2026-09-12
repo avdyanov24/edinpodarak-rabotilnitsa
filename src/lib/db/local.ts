@@ -130,6 +130,15 @@ export const localDb: Db = {
     });
   },
 
+  async lookupToken(token: string) {
+    const db = await read();
+    const reg = db.registrations.find((r) => r.cancel_token === token);
+    if (!reg) return null;
+    const event = db.events.find((e) => e.id === reg.event_id);
+    if (!event) return null;
+    return { status: reg.status, event_title: event.title, starts_at: event.starts_at };
+  },
+
   cancelByToken(token: string): Promise<CancelResult> {
     return exclusive(async () => {
       const db = await read();
