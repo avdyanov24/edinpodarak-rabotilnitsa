@@ -112,7 +112,8 @@ export interface Db {
   getSiteContent(): Promise<Record<string, unknown>>;
   saveSiteContent(data: Record<string, unknown>): Promise<void>;
 
-  uploadImage(file: File): Promise<string>;
+  /** `kind` is sniffed from the bytes by the endpoint - never the caller's word for it. */
+  uploadImage(file: File, kind: { type: string; ext: string }): Promise<string>;
 }
 
 /** Errors the booking RPC raises, mapped to something the UI can show. */

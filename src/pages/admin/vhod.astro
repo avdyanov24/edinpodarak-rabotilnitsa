@@ -14,7 +14,7 @@ export const prerender = false;
  */
 const configured = isConfigured();
 
-if (configured && readSession(Astro.cookies)) return Astro.redirect('/admin', 302);
+if (configured && (await readSession(Astro.cookies))) return Astro.redirect('/admin', 302);
 
 let error = '';
 let locked = false;
@@ -34,7 +34,9 @@ if (configured && Astro.request.method === 'POST') {
     Astro.response.status = 429;
   } else if (await signIn(email, password)) {
     await recordLogin(ip, email, true);
-    setSession(Astro.cookies, email);
+    // The session row records where from and with what, so „Влизания в
+    // панела“ on the Помощ page can show her anything she did not do.
+    await setSession(Astro.cookies, email, ip, Astro.request.headers.get('user-agent') ?? '');
     return Astro.redirect('/admin', 302);
   } else {
     await recordLogin(ip, email, false);

@@ -15,16 +15,57 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('X-Frame-Options', 'DENY');
-  h.set('Content-Security-Policy', "frame-ancestors 'none'");
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
+
+  // Vercel already sends this; sending it ourselves means it survives a move
+  // to any other host.
+  h.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+
+  /**
+   * Content-Security-Policy.
+   *
+   * Two policies, because the two halves of the site are worth different
+   * amounts to an attacker. The public pages get the shape of the thing -
+   * nobody may frame us, submit our forms somewhere else, or rewrite where
+   * relative URLs point. The panel gets the strict version: even if something
+   * did manage to inject a script in there, it could not load code from
+   * another origin and could not send a single attendee's telephone number
+   * off to one.
+   *
+   * `unsafe-inline` on styles is unavoidable - Astro inlines small
+   * stylesheets, and there are inline style attributes throughout. It is the
+   * weakest line here and it is worth saying so rather than implying the
+   * panel is sealed.
+   */
+  const admin = context.url.pathname.startsWith('/admin') || context.url.pathname.startsWith('/api/admin');
+  h.set('Content-Security-Policy', admin
+    ? [
+        "default-src 'self'",
+        "img-src 'self' data: blob: https://*.supabase.co",
+        "style-src 'self' 'unsafe-inline'",
+        "script-src 'self' 'unsafe-inline'",
+        "connect-src 'self'",
+        "font-src 'self'",
+        "form-action 'self'",
+        "base-uri 'none'",
+        "object-src 'none'",
+        "frame-ancestors 'none'",
+      ].join('; ')
+    : [
+        "frame-ancestors 'none'",
+        "form-action 'self'",
+        "base-uri 'none'",
+        "object-src 'none'",
+      ].join('; '));
 
   // Only the real address is meant to be indexed. The *.vercel.app production
   // URL is temporary and the пробна link is work in progress — if either got
   // into Google it would sit next to her own site in the results, showing
   // half-finished copy and dates that may since have changed. The rule is by
   // hostname, so it stops being needed on its own the day DNS moves.
-  if (!isCanonicalHost(context.url.hostname)) {
+  if (!isCanonicalHost(context.url.hostname) || admin) {
+    // The panel is never indexable, whatever hostname it is reached at.
     h.set('X-Robots-Tag', 'noindex, nofollow');
   }
 

@@ -176,11 +176,13 @@ export const supabaseDb: Db = {
     if (error) throw new DbError('content_save_failed', error.message);
   },
 
-  async uploadImage(file: File) {
-    const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
-    const name = `${crypto.randomUUID()}.${ext}`;
+  async uploadImage(file: File, kind: { type: string; ext: string }) {
+    // Both the name and the served Content-Type come from the sniffed bytes.
+    // The bucket is public, so a file that claimed to be text/html would be
+    // a page hosted under the project's own storage domain.
+    const name = `${crypto.randomUUID()}.${kind.ext}`;
     const { error } = await admin().storage.from(IMAGE_BUCKET)
-      .upload(name, file, { contentType: file.type, upsert: false });
+      .upload(name, file, { contentType: kind.type, upsert: false });
     if (error) throw new DbError('upload_failed', error.message);
     const { data } = admin().storage.from(IMAGE_BUCKET).getPublicUrl(name);
     return data.publicUrl;

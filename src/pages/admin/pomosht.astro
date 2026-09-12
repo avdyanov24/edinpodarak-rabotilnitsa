@@ -1,13 +1,58 @@
 ---
 import Admin from '../../layouts/Admin.astro';
-import { readSession, guard } from '../../lib/auth';
+import { readSession, revokeOtherSessions, recentSessions } from '../../lib/auth';
 import { brand } from '../../data/site';
 
 export const prerender = false;
 
-const denied = guard(Astro.cookies, Astro.redirect);
-if (denied) return denied;
-const session = readSession(Astro.cookies)!;
+// One round trip: the session is looked up and marked as used at once.
+const session = await readSession(Astro.cookies);
+if (!session) return Astro.redirect('/admin/vhod', 302);
+
+/**
+ * „Влизания в панела“.
+ *
+ * The password is shared and has travelled by message, which makes one
+ * question worth being able to answer without asking anybody: has somebody
+ * else been in here? Every sign-in is a row, and she can end all of them but
+ * her own with one button - which is also what to press the day the password
+ * changes.
+ */
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  if (String(form.get('action') ?? '') === 'revoke') {
+    const n = await revokeOtherSessions(session);
+    return Astro.redirect(`/admin/pomosht?izlezli=${n}#vlizaniya`, 302);
+  }
+}
+
+const revoked = Astro.url.searchParams.get('izlezli');
+const sessions = await recentSessions(session.email);
+
+const when = (iso: string) =>
+  new Intl.DateTimeFormat('bg-BG', {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+    timeZone: 'Europe/Sofia',
+  }).format(new Date(iso));
+
+/** „iPhone · Safari“ - enough for her to recognise her own telephone. */
+function device(ua: string): string {
+  if (!ua) return 'Неизвестно устройство';
+  const os = /iPhone|iPad/.test(ua) ? 'iPhone'
+    : /Android/.test(ua) ? 'Android'
+    : /Mac OS X/.test(ua) ? 'Mac'
+    : /Windows/.test(ua) ? 'Windows'
+    : /Linux/.test(ua) ? 'Linux' : 'Устройство';
+  const browser = /Edg\//.test(ua) ? 'Edge'
+    : /OPR\//.test(ua) ? 'Opera'
+    : /Chrome\//.test(ua) ? 'Chrome'
+    : /Firefox\//.test(ua) ? 'Firefox'
+    : /Safari\//.test(ua) ? 'Safari' : 'браузър';
+  return `${os} · ${browser}`;
+}
+
+const live = (r: { revoked_at: string | null; expires_at: string }) =>
+  !r.revoked_at && new Date(r.expires_at) > new Date();
 ---
 
 <Admin title="Помощ" email={session.email}>
@@ -126,6 +171,52 @@ const session = readSession(Astro.cookies)!;
     </p>
   </section>
 
+  <section class="card help" id="vlizaniya">
+    <h2>Влизания в панела</h2>
+    <p>
+      Всяко влизане с твоята парола се записва тук. Ако видиш влизане, което
+      не е твое - смени паролата и натисни бутона отдолу.
+    </p>
+
+    {revoked && (
+      <p class="tip">
+        {revoked === '0'
+          ? 'Нямаше други влизания освен това.'
+          : `Готово. Излязох от ${revoked} ${revoked === '1' ? 'друго място' : 'други места'}.`}
+      </p>
+    )}
+
+    {sessions.length === 0 ? (
+      <p>Още няма записани влизания.</p>
+    ) : (
+      <ul class="sess">
+        {sessions.map((r) => (
+          <li class={`sess__row${r.id === session.id ? ' is-me' : ''}`}>
+            <span class="sess__dev">{device(r.user_agent)}</span>
+            <span class="sess__meta">
+              {when(r.created_at)}
+              {r.ip ? ` · ${r.ip}` : ''}
+            </span>
+            <span class="sess__state">
+              {r.id === session.id ? 'това си ти'
+                : r.revoked_at ? 'излязло'
+                : live(r) ? 'още е отворено' : 'изтекло'}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <form method="POST" class="sess__form">
+      <input type="hidden" name="action" value="revoke" />
+      <button class="btn btn--ghost" type="submit">Излез от всички други устройства</button>
+    </form>
+    <p class="tip">
+      Влизането важи 12 часа, след което панелът пита за паролата пак.
+      Паролата се сменя от Supabase → Authentication → Users.
+    </p>
+  </section>
+
   <section class="card help">
     <h2>Ако нещо се обърка</h2>
     <p>
@@ -153,4 +244,20 @@ const session = readSession(Astro.cookies)!;
     color: var(--ink) !important;
   }
   .warn { background: #FBF3DE; }
+
+  .sess { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: 0.5rem; }
+  .sess__row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.1rem 0.8rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  .sess__row.is-me { border-color: #BBD3B4; background: #F4F8F2; }
+  .sess__dev { font-weight: 600; }
+  .sess__meta { grid-column: 1; color: var(--muted); font-size: 0.82rem; }
+  .sess__state { grid-row: 1 / span 2; align-self: center; color: var(--muted); font-size: 0.82rem; }
+  .sess__form { margin-bottom: 0.9rem; }
 </style>

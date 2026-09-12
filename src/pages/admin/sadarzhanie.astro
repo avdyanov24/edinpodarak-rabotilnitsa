@@ -1,13 +1,13 @@
 ---
 import Admin from '../../layouts/Admin.astro';
-import { readSession, guard } from '../../lib/auth';
+import { readSession } from '../../lib/auth';
 import { getContent, saveContent } from '../../lib/content';
 
 export const prerender = false;
 
-const denied = guard(Astro.cookies, Astro.redirect);
-if (denied) return denied;
-const session = readSession(Astro.cookies)!;
+// One round trip: the session is looked up and marked as used at once.
+const session = await readSession(Astro.cookies);
+if (!session) return Astro.redirect('/admin/vhod', 302);
 
 let saved = Astro.url.searchParams.get('zapazeno') === '1';
 let error = '';

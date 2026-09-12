@@ -26,6 +26,10 @@ supabase/migrations/0001_schema.sql
 supabase/migrations/0002_functions.sql
 supabase/migrations/0003_rls.sql
 supabase/migrations/0004_retention.sql
+supabase/migrations/0005_login_attempts.sql
+supabase/migrations/0006_manual_bookings.sql
+supabase/migrations/0007_minimum.sql
+supabase/migrations/0008_admin_sessions.sql
 ```
 
 They are safe to re-run.

@@ -291,10 +291,11 @@ export const localDb: Db = {
     });
   },
 
-  async uploadImage(file: File) {
+  async uploadImage(file: File, kind: { type: string; ext: string }) {
     await mkdir(UPLOADS, { recursive: true });
-    const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
-    const name = `${randomUUID()}.${ext}`;
+    // The name and the extension are ours, from the sniffed bytes: nothing
+    // the caller typed reaches the filesystem.
+    const name = `${randomUUID()}.${kind.ext}`;
     await writeFile(`${UPLOADS}/${name}`, Buffer.from(await file.arrayBuffer()));
     return `/media/uploads/${name}`;
   },

@@ -43,32 +43,42 @@ function memoryCheck(ip: string, email: string): Throttle {
 
 /** Is this address, or this account, currently locked out? */
 export async function checkLogin(ip: string, email: string): Promise<Throttle> {
-  if (!hasSupabase()) return memoryCheck(ip, email);
+  // The in-memory count runs whatever else happens. On its own it is weak -
+  // serverless instances each keep their own and a cold start wipes it - but
+  // it is the backstop for the case below where the database cannot answer,
+  // which would otherwise leave the door completely unguarded.
+  const local = memoryCheck(ip, email);
+  if (!hasSupabase()) return local;
+
   try {
     const { data, error } = await admin().rpc('login_throttle', { p_ip: ip, p_email: email });
     if (error) throw error;
     const row = Array.isArray(data) ? data[0] : data;
-    if (!row) return open;
-    return { locked: Boolean(row.locked), retryAfter: Number(row.retry_after ?? 0) };
+    if (!row) return local;
+    const remote = { locked: Boolean(row.locked), retryAfter: Number(row.retry_after ?? 0) };
+    return remote.locked ? remote : local;
   } catch {
     // A throttle that cannot be read must not become a door that cannot be
-    // opened — the password check still stands behind it.
-    return open;
+    // opened - the password check still stands behind it, and the count above
+    // still bites within this instance.
+    return local;
   }
 }
 
 /** Write down what happened, so the next attempt knows about it. */
 export async function recordLogin(ip: string, email: string, ok: boolean): Promise<void> {
-  if (!hasSupabase()) {
-    if (ok) {
-      for (let i = memory.length - 1; i >= 0; i--) {
-        if (memory[i].ip === ip || memory[i].email === email.toLowerCase()) memory.splice(i, 1);
-      }
-    } else {
-      memory.push({ ip, email: email.toLowerCase(), at: Date.now() });
+  // Always kept, Supabase or not: see the backstop in checkLogin.
+  if (ok) {
+    for (let i = memory.length - 1; i >= 0; i--) {
+      if (memory[i].ip === ip || memory[i].email === email.toLowerCase()) memory.splice(i, 1);
     }
-    return;
+  } else {
+    memory.push({ ip, email: email.toLowerCase(), at: Date.now() });
+    // never let a stream of attempts grow the process
+    if (memory.length > 500) memory.splice(0, memory.length - 500);
   }
+  if (!hasSupabase()) return;
+
   try {
     await admin().rpc('record_login_attempt', { p_ip: ip, p_email: email, p_ok: ok });
   } catch {

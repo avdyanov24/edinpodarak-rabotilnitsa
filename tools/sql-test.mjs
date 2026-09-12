@@ -22,7 +22,7 @@ await db.exec(`
   end $$;
 `);
 
-for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts', '0006_manual_bookings', '0007_minimum']) {
+for (const f of ['0001_schema', '0002_functions', '0003_rls', '0004_retention', '0005_login_attempts', '0006_manual_bookings', '0007_minimum', '0008_admin_sessions']) {
   try {
     await db.exec(readFileSync(`supabase/migrations/${f}.sql`, 'utf8'));
     ok(`migration ${f} applies`, true);
@@ -222,6 +222,54 @@ ok('old attempts are cleaned up', left.rows[0].n === 0, `${left.rows[0].n} stale
   const granted = await db.query(
     `select has_function_privilege('anon', 'public.list_published_events()', 'execute') as ok`);
   ok('anon can still read the published list after 0007 replaced it', granted.rows[0].ok === true);
+}
+
+// --- sessions the panel can take back --------------------------------------
+// The cookie is a pointer now, so „Излез“ has to actually kill the row, and a
+// copy of that cookie taken anywhere else has to stop working with it.
+{
+  const start = (email, ip = '1.2.3.4', ua = 'Chrome') =>
+    db.query(`select admin_session_start($1, $2, $3, 12) as id`, [email, ip, ua])
+      .then((r) => r.rows[0].id);
+  const touch = (id) => db.query(`select * from admin_session_touch($1)`, [id]);
+
+  const a = await start('admin@edinpodarak.com');
+  const b = await start('admin@edinpodarak.com', '5.6.7.8', 'iPhone Safari');
+
+  ok('a signed-in session is recognised', (await touch(a)).rows[0]?.email === 'admin@edinpodarak.com');
+  ok('and being used marks it as seen',
+     (await db.query(`select last_seen_at >= created_at as ok from admin_sessions where id = $1`, [a])).rows[0].ok);
+
+  await db.query(`select admin_session_revoke($1)`, [b]);
+  ok('a revoked session is refused', (await touch(b)).rows.length === 0);
+  ok('and revoking it did not touch the other one', (await touch(a)).rows.length === 1);
+
+  // „Излез от всички устройства“ keeps the browser that pressed it
+  const c = await start('admin@edinpodarak.com');
+  const killed = await db.query(`select admin_session_revoke_all($1, $2) as n`, ['admin@edinpodarak.com', a]);
+  ok('signing out everywhere leaves the browser that asked', killed.rows[0].n === 1, `${killed.rows[0].n} ended`);
+  ok('the one that asked still works', (await touch(a)).rows.length === 1);
+  ok('the others do not', (await touch(c)).rows.length === 0);
+
+  // and a session cannot outlive its expiry
+  await db.query(`update admin_sessions set expires_at = now() - interval '1 minute' where id = $1`, [a]);
+  ok('an expired session is refused', (await touch(a)).rows.length === 0);
+
+  const list = await db.query(`select * from admin_sessions_recent($1, 8)`, ['admin@edinpodarak.com']);
+  ok('the panel can list the sign-ins, newest first', list.rows.length === 3
+     && new Date(list.rows[0].created_at) >= new Date(list.rows[2].created_at), `${list.rows.length} rows`);
+
+  // none of this may be reachable with the key that ships to the browser
+  const grants = await db.query(`
+    select bool_or(has_function_privilege('anon', p.oid, 'execute')) as anon_any
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname like 'admin_session%'`);
+  ok('none of the session functions is reachable by anon', grants.rows[0].anon_any === false);
+
+  const rls = await db.query(`select relrowsecurity from pg_class where relname = 'admin_sessions'`);
+  ok('and the table itself has row level security with no policies',
+     rls.rows[0].relrowsecurity === true
+     && (await db.query(`select count(*)::int as n from pg_policies where tablename = 'admin_sessions'`)).rows[0].n === 0);
 }
 
 await db.close();
