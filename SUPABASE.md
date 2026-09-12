@@ -41,6 +41,10 @@ select * from list_published_events();      -- empty, no error
 select count(*) from events;                 -- 0
 ```
 
+**Изключи самозаписването** веднага след това: Authentication → Providers →
+Email → *Allow new users to sign up* → off. Всеки потребител в проекта може да
+отвори панела, а акаунтите се правят на ръка.
+
 ## 3. Create her login
 
 Authentication → Users → Add user. Use her real email and a password she
